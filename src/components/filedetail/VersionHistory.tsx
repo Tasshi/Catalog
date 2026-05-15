@@ -56,11 +56,9 @@ const s = {
 
 export default function VersionHistory({
   fileId,
-  currentVersion,
-}: {
-  fileId?: string;
-  currentVersion?: number;
-}) {
+  currentVersion: __currentVersion }: { fileId: string; currentVersion: number })
+
+{
   const [versions, setVersions] = useState<Version[]>([]);
 
   useEffect(() => {

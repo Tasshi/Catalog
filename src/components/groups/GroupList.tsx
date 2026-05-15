@@ -2,7 +2,11 @@ import { useGroups } from '../../hooks/useGroups';
 import { GroupCard } from '../groups/GroupCard';
 import { Users } from 'lucide-react';
 
-export default function GroupList({ onSelect }) {
+interface GroupListProps {
+  onSelect: (group: ReturnType<typeof useGroups>['groups'][number]) => void;
+}
+
+export default function GroupList({ onSelect }: GroupListProps) {
   const { groups, loading } = useGroups();
 
   if (loading) return (
@@ -24,3 +28,4 @@ export default function GroupList({ onSelect }) {
     </div>
   );
 }
+

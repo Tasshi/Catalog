@@ -51,16 +51,16 @@ export interface GroupMemberCount {
 export interface FileCount {
   count: number;
 }
-
 export interface Group {
   id: string;
   name: string;
   description?: string;
+  color?: string;       // ← add here if needed
   icon?: string;
   owner_id: string;
   created_at: string;
   group_members?: { count: number }[];
-  files?: { count: number }[];  // optional — may not exist yet
+  files?: { count: number }[];
 }
 
 export interface GroupCardProps {
@@ -122,6 +122,7 @@ export interface FileRecord {
   is_deleted: boolean;
   created_at: string;
   group_id: string | null;
+  folder_id: string | null;
   uploaded_by: string;
   // joined
   ext: string;
@@ -129,4 +130,21 @@ export interface FileRecord {
   authorName: string;
   groupName: string | null;
   groupIcon: string | null;
+}
+// Add this interface above the component (or in a shared types file)
+export interface FileDetail {
+  id: string;
+  name: string;
+  file_type: string;
+  size_bytes: number;
+  storage_path: string;
+  description?: string | null;
+  tags?: string[];
+  version?: number;
+  created_at: string;
+  group_id?: string | null;
+  uploaded_by: string;
+  // joined relations
+  uploaded_by_profile?: { full_name: string } | null;
+  group?: { name: string; icon: string; description?: string } | null;
 }

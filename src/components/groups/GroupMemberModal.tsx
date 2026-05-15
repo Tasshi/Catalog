@@ -113,3 +113,4 @@ export default function GroupMemberModal({ group, open, onClose }) {
     </Modal>
   );
 }
+

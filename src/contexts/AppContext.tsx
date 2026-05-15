@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { ToastData } from '../components/ui/cons';
+import type { ToastData } from '@/components/ui/cons';
 
 
 interface AppContextType {

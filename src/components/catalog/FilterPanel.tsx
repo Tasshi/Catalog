@@ -1,4 +1,4 @@
-import { FileType, SortKey } from './CatalogView';
+import type { FileType, SortKey } from './CatalogView';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

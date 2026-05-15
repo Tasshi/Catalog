@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useGroups } from '../../hooks/useGroups';
 import { FormField, Button } from '../ui';
 import { X } from 'lucide-react';
-import { Group,  MetadataPanelProps } from '../ui/cons'
+import type { Group,  MetadataPanelProps } from '../ui/cons'
 
 
 export default function MetadataPanel({ file, onSubmit, uploading, progress }: MetadataPanelProps) {

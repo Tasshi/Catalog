@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { AvatarProps, ButtonProps, BadgeProps, SearchBarProps, ModalProps, ToastData, ToastProps, FormFieldProps } from './cons';
+import  type { AvatarProps, ButtonProps, BadgeProps, SearchBarProps, ModalProps, ToastProps, FormFieldProps } from './cons';
 
 export function Button({ variant = 'primary', children, className = '', ...props }: ButtonProps) {
   const base = 'inline-flex items-center gap-2 text-sm font-normal leading-4 rounded cursor-pointer transition-all duration-150 border-none';

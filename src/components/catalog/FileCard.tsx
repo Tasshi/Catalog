@@ -1,8 +1,8 @@
 import { getFileConfig } from '../../lib/metadata';
-import { Badge, Avatar, Button } from '../ui';
+import { Badge, Avatar } from '../ui';
 import { Download, Info, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { IconSize,FileIconProps, FileRowProps,FileCardProps } from '../ui/cons';
+import type { IconSize,FileIconProps, FileRowProps,FileCardProps } from '../ui/cons';
 
 // ── FileIcon ──────────────────────────────────────────────────────────────────
 

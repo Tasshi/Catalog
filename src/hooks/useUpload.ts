@@ -1,16 +1,23 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { uploadFile as storageUpload } from '../lib/storage';
-import { getFileExtension, extractAutoMetadata } from '../lib/metadata';
+import { extractAutoMetadata } from '../lib/metadata';
 import { useAuth } from '../contexts/AuthContext';
+
+// Removed 'getFileExtension' from metadata imports as it was unused.
 
 export function useUpload() {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function uploadFile({ file, description, tags, groupId }) {
+  async function uploadFile({ file, description, tags, groupId }: {
+    file: File;
+    description?: string;
+    tags?: string[];
+    groupId?: string | null;
+  }) {
     if (!user || !file) return;
     setUploading(true);
     setProgress(0);
@@ -20,7 +27,7 @@ export function useUpload() {
       const storagePath = await storageUpload(file, user.id, setProgress);
       const auto = extractAutoMetadata(file);
 
-      const { data, error } = await supabase.from('files').insert({
+      const { data, error: insertError } = await supabase.from('files').insert({
         name: auto.name,
         file_type: auto.fileType,
         size_bytes: auto.sizeBytes,
@@ -32,7 +39,7 @@ export function useUpload() {
         version: 1,
       }).select().single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       // Log upload action
       await supabase.from('audit_logs').insert({
@@ -43,8 +50,9 @@ export function useUpload() {
 
       setProgress(100);
       return data;
-    } catch (e) {
-      setError(e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Upload failed';
+      setError(msg);
       throw e;
     } finally {
       setUploading(false);
