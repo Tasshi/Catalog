@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { detectFileType, AUTO_FOLDER_META } from '../types/folder';
 import type { FolderRecord, FileType } from '../types/folder';
 
-// ── Tree builder ───────────────────────────────────────────────────────────────
+// ── Tree builder ──────────────────────────────────────────────────────────────
 
 function buildTree(flat: FolderRecord[]): FolderRecord[] {
   const map = new Map<string, FolderRecord>();
@@ -13,7 +13,7 @@ function buildTree(flat: FolderRecord[]): FolderRecord[] {
   const roots: FolderRecord[] = [];
   map.forEach(node => {
     if (node.parent_id && map.has(node.parent_id)) {
-      map.get(node.parent_id)!.children.push(node);
+      map.get(node.parent_id)!.children!.push(node);
     } else {
       roots.push(node);
     }
@@ -21,7 +21,6 @@ function buildTree(flat: FolderRecord[]): FolderRecord[] {
   return roots;
 }
 
-// ── Typed supabase helper — bypasses missing generated types ──────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
 
@@ -30,26 +29,51 @@ const db = supabase as any;
 export function useFolderTree(groupId: string) {
   const { user } = useAuth();
   const [roots,   setRoots]   = useState<FolderRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
-  // Keep latest user/groupId in a ref so the effect never needs them as deps
-  const ctxRef = useRef({ user, groupId });
-  useEffect(() => { ctxRef.current = { user, groupId }; });
+  // Keep a ref for use inside callbacks that need the latest values
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
 
-  // ── fetch all folders for this group (flat, then build tree) ──────────────
+  // ── fetchFolders ──────────────────────────────────────────────────────────
+  // Accepts groupId as a parameter so it always uses the current value,
+  // not a stale closure or ref.
 
-  const fetchFolders = useCallback(async () => {
-    const { user: u, groupId: gid } = ctxRef.current;
-    if (!u) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error: fetchError } = await db
-        .from('folders')
-        .select('*')
-        .eq('group_id', gid)
-        .order('created_at', { ascending: true });
+  // const fetchFolders = useCallback(async (gid: string) => {
+  //   const u = userRef.current;
+  //   if (!u || !gid) return;
+
+  //   setLoading(true);
+  //   setError(null);
+
+  //   try {
+  //     const { data, error: fetchError } = await db
+  //       .from('subprojects')
+  //       .select('*')
+  //       .eq('group_id', gid)
+  //       .order('created_at', { ascending: true });
+  const fetchFolders = useCallback(async (gid: string) => {
+  const u = userRef.current;
+  
+  console.log('[fetchFolders] called with gid:', gid, '| user:', u?.id ?? 'NULL');
+  
+  if (!u || !gid) {
+    console.warn('[fetchFolders] early return — missing user or gid');
+    return;
+  }
+
+  setLoading(true);
+  setError(null);
+
+  try {
+    const { data, error: fetchError } = await db
+      .from('subprojects')
+      .select('*')
+      .eq('group_id', gid)
+      .order('created_at', { ascending: true });
+
+    console.log('[fetchFolders] data:', data, '| error:', fetchError);
 
       if (fetchError) throw fetchError;
 
@@ -83,130 +107,98 @@ export function useFolderTree(groupId: string) {
     } finally {
       setLoading(false);
     }
-  }, []); // ← stable: no deps, reads live values from ctxRef
+  }, []); // no deps — gid is passed in, user comes from ref
 
-  // ── Fetch on mount and whenever user or groupId changes ───────────────────
+  // Re-fetch whenever groupId or user changes
   useEffect(() => {
-    if (!user) return;
+    if (!user || !groupId) {
+      setRoots([]);
+      setLoading(false);
+      return;
+    }
 
-    let cancelled = false;
+    fetchFolders(groupId);
+  }, [user, groupId, fetchFolders]);
 
-    (async () => {
-      const { user: u, groupId: gid } = ctxRef.current;
-      if (!u) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const { data, error: fetchError } = await db
-          .from('folders')
-          .select('*')
-          .eq('group_id', gid)
-          .order('created_at', { ascending: true });
+  // ── refetch (public, uses current groupId) ────────────────────────────────
 
-        if (fetchError) throw fetchError;
-
-        const flat: FolderRecord[] = (data ?? []).map((f: FolderRecord) => ({
-          ...f,
-          children:   [],
-          file_count: 0,
-        }));
-
-        const folderIds = flat.map(f => f.id);
-        const countMap: Record<string, number> = {};
-
-        if (folderIds.length > 0) {
-          const { data: fileCounts } = await db
-            .from('files')
-            .select('folder_id')
-            .in('folder_id', folderIds)
-            .eq('is_deleted', false);
-
-          (fileCounts ?? []).forEach((f: { folder_id: string | null }) => {
-            if (f.folder_id) countMap[f.folder_id] = (countMap[f.folder_id] ?? 0) + 1;
-          });
-        }
-
-        flat.forEach(f => { f.file_count = countMap[f.id] ?? 0; });
-        if (!cancelled) setRoots(buildTree(flat));
-      } catch (e: unknown) {
-        if (!cancelled) {
-          const msg = e instanceof Error ? e.message : 'Failed to load folders';
-          console.error('[fetchFolders effect]', e);
-          setError(msg);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [user, groupId]); // ✅ primitive deps, no fetchFolders in dep chain
+  const refetch = useCallback(() => fetchFolders(groupId), [fetchFolders, groupId]);
 
   // ── createFolder ──────────────────────────────────────────────────────────
 
   const createFolder = useCallback(async (
     name: string,
     parentId: string | null,
-    icon = '📁',
+    _icon = '📁',
   ): Promise<string | null> => {
-    const { user: u, groupId: gid } = ctxRef.current;
-    if (!u) return null;
+    const u = userRef.current;
+    if (!u || !groupId) return null;
+
+    const payload: Record<string, unknown> = {
+      group_id:   groupId,
+      name,
+      created_by: u.id,
+    };
+    if (parentId) payload.parent_id = parentId;
+
     try {
       const { data, error: insertError } = await db
-        .from('folders')
-        .insert({
-          group_id:   gid,
-          parent_id:  parentId,
-          name,
-          icon,
-          is_auto:    false,
-          auto_type:  null,
-          created_by: u.id,
-        })
+        .from('subprojects')
+        .insert(payload)
         .select()
         .single() as { data: FolderRecord; error: unknown };
 
-      if (insertError) throw insertError;
-      await fetchFolders();
+      if (insertError) {
+        const msg = (insertError as { message?: string }).message ?? JSON.stringify(insertError);
+        console.error('[createFolder] insert failed:', msg, '| payload:', payload);
+        setError(`Failed to create folder: ${msg}`);
+        return null;
+      }
+
+      await fetchFolders(groupId);
       return data.id;
     } catch (e: unknown) {
-      console.error('[createFolder]', e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[createFolder] exception:', msg);
+      setError(`Failed to create folder: ${msg}`);
       return null;
     }
-  }, [fetchFolders]);
+  }, [groupId, fetchFolders]);
 
-  // ── ensureAutoFolder — finds or creates a typed bucket ────────────────────
+  // ── ensureAutoFolder ──────────────────────────────────────────────────────
 
   const ensureAutoFolder = useCallback(async (
     type: FileType,
     parentId: string | null,
   ): Promise<string | null> => {
-    const { user: u, groupId: gid } = ctxRef.current;
-    if (!u) return null;
-
-    const { data: existing } = await db
-      .from('folders')
-      .select('id')
-      .eq('group_id', gid)
-      .eq('is_auto', true)
-      .eq('auto_type', type)
-      .eq(parentId ? 'parent_id' : 'is_auto', parentId ?? true)
-      .maybeSingle() as { data: { id: string } | null };
-
-    if (existing) return existing.id;
+    const u = userRef.current;
+    if (!u || !groupId) return null;
 
     const meta = AUTO_FOLDER_META[type];
+
+    let query = db
+      .from('subprojects')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('name', meta.label);
+
+    query = parentId
+      ? query.eq('parent_id', parentId)
+      : query.is('parent_id', null);
+
+    const { data: existing } = await query.maybeSingle() as { data: { id: string } | null };
+    if (existing) return existing.id;
+
+    const payload: Record<string, unknown> = {
+      group_id:   groupId,
+      name:       meta.label,
+      created_by: u.id,
+    };
+    if (parentId) payload.parent_id = parentId;
+
     const { data, error: insertError } = await db
-      .from('folders')
-      .insert({
-        group_id:   gid,
-        parent_id:  parentId,
-        name:       meta.label,
-        icon:       meta.icon,
-        is_auto:    true,
-        auto_type:  type,
-        created_by: u.id,
-      })
+      .from('subprojects')
+      .insert(payload)
       .select()
       .single() as { data: FolderRecord; error: unknown };
 
@@ -215,33 +207,37 @@ export function useFolderTree(groupId: string) {
       return null;
     }
     return data.id;
-  }, []);
+  }, [groupId]);
 
   // ── renameFolder ──────────────────────────────────────────────────────────
 
   const renameFolder = useCallback(async (id: string, name: string) => {
+    if (!userRef.current) return;
+
     const { error: updateError } = await db
-      .from('folders')
+      .from('subprojects')
       .update({ name })
       .eq('id', id);
 
     if (updateError) { console.error('[renameFolder]', updateError); return; }
-    await fetchFolders();
-  }, [fetchFolders]);
+    await fetchFolders(groupId);
+  }, [groupId, fetchFolders]);
 
   // ── deleteFolder ──────────────────────────────────────────────────────────
 
   const deleteFolder = useCallback(async (id: string) => {
+    if (!userRef.current) return;
+
     const { error: deleteError } = await db
-      .from('folders')
+      .from('subprojects')
       .delete()
       .eq('id', id);
 
     if (deleteError) { console.error('[deleteFolder]', deleteError); return; }
-    await fetchFolders();
-  }, [fetchFolders]);
+    await fetchFolders(groupId);
+  }, [groupId, fetchFolders]);
 
-  // ── moveFileToFolder — sets folder_id on an existing file ─────────────────
+  // ── moveFileToFolder ──────────────────────────────────────────────────────
 
   const moveFileToFolder = useCallback(async (
     fileId: string,
@@ -253,10 +249,10 @@ export function useFolderTree(groupId: string) {
       .eq('id', fileId);
 
     if (updateError) { console.error('[moveFileToFolder]', updateError); return; }
-    await fetchFolders();
-  }, [fetchFolders]);
+    await fetchFolders(groupId);
+  }, [groupId, fetchFolders]);
 
-  // ── autoSortFile — detect type, ensure bucket, assign file ───────────────
+  // ── autoSortFile ──────────────────────────────────────────────────────────
 
   const autoSortFile = useCallback(async (
     fileId: string,
@@ -273,7 +269,7 @@ export function useFolderTree(groupId: string) {
     roots,
     loading,
     error,
-    refetch:          fetchFolders,
+    refetch,
     createFolder,
     ensureAutoFolder,
     renameFolder,

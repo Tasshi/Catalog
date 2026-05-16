@@ -1,13 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { Group, GroupMember } from '../components/ui/cons';
+import type { Group, GroupMember, SubGroup } from '../components/ui/cons';
 
-// ---------------------------------------------------------------------------
-// Local insert types — replace with generated Database types when available.
-// Run: npx supabase gen types typescript --project-id YOUR_ID > types/supabase.ts
-// Then type your client: createClient<Database>(url, key)
-// ---------------------------------------------------------------------------
 type GroupInsert = {
   name: string;
   owner_id: string;
@@ -109,7 +104,6 @@ export function useGroups() {
       throw new Error(error.message);
     }
 
-    // Cast after the error guard so TS knows data is non-null.
     const group = data as Group;
 
     const memberPayload: GroupMemberInsert = {
@@ -165,9 +159,9 @@ export function useGroupMembers(groupId: string | null) {
       if (inflight === 1) setLoading(true);
 
       try {
-        const { data, error } = await supabase
+        const { data: memberData, error } = await supabase
           .from('group_members')
-          .select(`*, profile:profiles(full_name, avatar_url)`)
+          .select('*')
           .eq('group_id', groupId as string);
 
         if (cancelled) return;
@@ -177,7 +171,21 @@ export function useGroupMembers(groupId: string | null) {
           return;
         }
 
-        setMembers((data as GroupMember[]) ?? []);
+        const userIds = memberData.map((m) => m.user_id);
+
+        const { data: profileData } = userIds.length
+          ? await supabase
+              .from('profiles')
+              .select('id, full_name, email, phone, avatar_url')
+              .in('id', userIds)
+          : { data: [] };
+
+        const merged = memberData.map((m) => ({
+          ...m,
+          profile: profileData?.find((p) => p.id === m.user_id) ?? null,
+        }));
+
+        setMembers((merged as GroupMember[]) ?? []);
       } finally {
         inflight -= 1;
         if (!cancelled && inflight === 0) setLoading(false);
@@ -229,7 +237,6 @@ export function useGroupMembers(groupId: string | null) {
   async function updateRole(memberId: string, role: string) {
     const { error } = await supabase
       .from('group_members')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ role } as unknown as never)
       .eq('id', memberId);
 
@@ -248,4 +255,95 @@ export function useGroupMembers(groupId: string | null) {
     updateRole,
     refetch: fetchMembers,
   };
+}
+
+// ---------------------------------------------------------------------------
+// useSubGroups — fetches subprojects (folders) belonging to a parent group,
+// used as "teams" in the UI. The table 'subgroups' does not exist in the
+// schema; subprojects serves this purpose.
+// ---------------------------------------------------------------------------
+export function useSubGroups(groupId: string | null) {
+  const [subGroups, setSubGroups] = useState<SubGroup[]>([]);
+  const [loading, setLoading]     = useState(false);
+
+  const fetchRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
+  useEffect(() => {
+    if (!groupId) {
+      setSubGroups([]);
+      return;
+    }
+
+    let cancelled = false;
+    let inflight  = 0;
+
+    async function loadSubGroups() {
+      inflight += 1;
+      if (inflight === 1) setLoading(true);
+
+      try {
+        // ↓ was 'subgroups' — table does not exist; using 'subprojects' instead
+        const { data, error } = await supabase
+          .from('subprojects')
+          .select('id, group_id, name, created_at')
+          .eq('group_id', groupId as string)
+          .is('parent_id', null)          // only top-level folders as "teams"
+          .order('created_at', { ascending: true });
+
+        if (cancelled) return;
+
+        if (error) {
+          console.error('[fetchSubGroups]', error);
+          return;
+        }
+
+        setSubGroups((data as SubGroup[]) ?? []);
+      } finally {
+        inflight -= 1;
+        if (!cancelled && inflight === 0) setLoading(false);
+      }
+    }
+
+    fetchRef.current = loadSubGroups;
+    loadSubGroups();
+
+    return () => {
+      cancelled = true;
+      fetchRef.current = undefined;
+    };
+  }, [groupId]);
+
+  const refetch = useCallback(() => {
+    return fetchRef.current?.() ?? Promise.resolve();
+  }, []);
+
+  async function createSubGroup(name: string) {
+    if (!groupId) throw new Error('No group selected');
+
+    // ↓ was 'subgroups' — using 'subprojects' instead
+    const { data, error } = await supabase
+      .from('subprojects')
+      .insert({ group_id: groupId, name: name.trim() } as never)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    await refetch();
+    return data as SubGroup;
+  }
+
+  async function deleteSubGroup(subGroupId: string) {
+    // ↓ was 'subgroups' — using 'subprojects' instead
+    const { error } = await supabase
+      .from('subprojects')
+      .delete()
+      .eq('id', subGroupId);
+
+    if (error) throw new Error(error.message);
+
+    setSubGroups(prev => prev.filter(s => s.id !== subGroupId));
+  }
+
+  return { subGroups, loading, refetch, createSubGroup, deleteSubGroup };
 }

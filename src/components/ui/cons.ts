@@ -34,7 +34,6 @@ export interface ModalProps {
   width?: number;
 }
 
-
 export interface ToastProps {
   toast: ToastData | null;
 }
@@ -51,16 +50,25 @@ export interface GroupMemberCount {
 export interface FileCount {
   count: number;
 }
+
 export interface Group {
   id: string;
   name: string;
   description?: string;
-  color?: string;       // ← add here if needed
+  color?: string;
   icon?: string;
   owner_id: string;
   created_at: string;
   group_members?: { count: number }[];
   files?: { count: number }[];
+}
+
+// ── SubGroup ────────────────────────────────────────────────────────────────
+export interface SubGroup {
+  id: string;
+  group_id: string;
+  name: string;
+  created_at: string;
 }
 
 export interface GroupCardProps {
@@ -70,7 +78,13 @@ export interface GroupCardProps {
 
 export interface MetadataPanelProps {
   file: File | null;
-  onSubmit: (data: { file: File; description: string; tags: string[]; groupId: string | null }) => void;
+  onSubmit: (data: {
+    file: File;
+    description: string;
+    tags: string[];
+    groupId: string | null;
+    subGroupId: string | null; // ← added
+  }) => void;
   uploading: boolean;
   progress: number;
 }
@@ -108,13 +122,22 @@ export interface FileCardProps {
   onDelete: (file: FileItem) => void;
   onDownload: (file: FileItem) => void;
 }
-export interface GroupMember {
+
+export type GroupMember = {
   id: string;
   group_id: string;
   user_id: string;
   role: string;
-  profile?: { full_name: string; avatar_url: string };
-}
+  created_at?: string;
+  profile?: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    avatar_url?: string | null;
+  } | null;
+};
+
 export interface FileRecord {
   id: string;
   name: string;
@@ -124,14 +147,13 @@ export interface FileRecord {
   group_id: string | null;
   folder_id: string | null;
   uploaded_by: string;
-  // joined
   ext: string;
   sizeFormatted: string;
   authorName: string;
   groupName: string | null;
   groupIcon: string | null;
 }
-// Add this interface above the component (or in a shared types file)
+
 export interface FileDetail {
   id: string;
   name: string;
@@ -144,7 +166,6 @@ export interface FileDetail {
   created_at: string;
   group_id?: string | null;
   uploaded_by: string;
-  // joined relations
   uploaded_by_profile?: { full_name: string } | null;
   group?: { name: string; icon: string; description?: string } | null;
 }

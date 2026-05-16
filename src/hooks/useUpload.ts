@@ -4,19 +4,24 @@ import { uploadFile as storageUpload } from '../lib/storage';
 import { extractAutoMetadata } from '../lib/metadata';
 import { useAuth } from '../contexts/AuthContext';
 
-// Removed 'getFileExtension' from metadata imports as it was unused.
-
 export function useUpload() {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  async function uploadFile({ file, description, tags, groupId }: {
+  async function uploadFile({
+    file,
+    description,
+    tags,
+    groupId,
+    folderId,       // ← subproject/folder to store the file under
+  }: {
     file: File;
     description?: string;
     tags?: string[];
     groupId?: string | null;
+    folderId?: string | null;   // ← added
   }) {
     if (!user || !file) return;
     setUploading(true);
@@ -27,17 +32,22 @@ export function useUpload() {
       const storagePath = await storageUpload(file, user.id, setProgress);
       const auto = extractAutoMetadata(file);
 
-      const { data, error: insertError } = await supabase.from('files').insert({
-        name: auto.name,
-        file_type: auto.fileType,
-        size_bytes: auto.sizeBytes,
-        storage_path: storagePath,
-        description: description || null,
-        tags: tags || [],
-        group_id: groupId || null,
-        uploaded_by: user.id,
-        version: 1,
-      }).select().single();
+      const { data, error: insertError } = await supabase
+        .from('files')
+        .insert({
+          name:         auto.name,
+          file_type:    auto.fileType,
+          size_bytes:   auto.sizeBytes,
+          storage_path: storagePath,
+          description:  description || null,
+          tags:         tags || [],
+          group_id:     groupId  || null,
+          folder_id:    folderId || null,   // ← saves into the subproject folder
+          uploaded_by:  user.id,
+          version:      1,
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
@@ -45,7 +55,7 @@ export function useUpload() {
       await supabase.from('audit_logs').insert({
         file_id: data.id,
         user_id: user.id,
-        action: 'upload',
+        action:  'upload',
       });
 
       setProgress(100);

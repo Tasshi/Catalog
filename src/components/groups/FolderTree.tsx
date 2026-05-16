@@ -460,7 +460,7 @@ function FolderView({
           />
         )}
 
-        {/* Sub-folders */}
+        {/* Sub-folders — always read from node.children which is kept live by parent */}
         {node.children.map(child => (
           <FolderTile
             key={child.id}
@@ -525,17 +525,27 @@ export default function FolderTree({
   onCreateFolder, onAddSubFolder, onRename, onDelete,
   onUploadToFolder, onMoveFile, onRemoveFromFolder,
 }: FolderTreeProps) {
-  const [openFolder,  setOpenFolder]  = useState<FolderRecord | null>(null);
-  const [addingRoot,  setAddingRoot]  = useState(false);
-  const [savingRoot,  setSavingRoot]  = useState(false);
+  // FIX: store only the ID, not the object — so openFolder is always derived
+  // fresh from the latest `roots` prop on every render. This ensures that when
+  // onAddSubFolder resolves and the parent refetches roots, FolderView
+  // immediately receives the updated node (with the new child) without any
+  // stale-closure issues.
+  const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  const [addingRoot,   setAddingRoot]   = useState(false);
+  const [savingRoot,   setSavingRoot]   = useState(false);
+
+  // Derive the live node from the latest roots on every render
+  const openFolder = openFolderId
+    ? roots.find(r => r.id === openFolderId) ?? null
+    : null;
 
   // ── Drill into a folder ──────────────────────────────────────────────────
   if (openFolder) {
     return (
       <FolderView
-        node={openFolder}
+        node={openFolder}           // always the freshest version from roots
         files={files}
-        onBack={() => setOpenFolder(null)}
+        onBack={() => setOpenFolderId(null)}
         onAddSubFolder={onAddSubFolder}
         onRename={onRename}
         onDelete={onDelete}
@@ -588,7 +598,7 @@ export default function FolderTree({
                 key={node.id}
                 node={node}
                 fileCount={node.file_count + node.children.reduce((s, c) => s + c.file_count, 0)}
-                onOpen={() => setOpenFolder(node)}
+                onOpen={() => setOpenFolderId(node.id)}   // FIX: store id, not object
                 onRename={onRename}
                 onDelete={onDelete}
                 onUpload={onUploadToFolder}

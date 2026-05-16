@@ -10,14 +10,16 @@ export async function uploadFile(
   onProgress?: (pct: number) => void,
 ): Promise<string> {
   const ext  = file.name.split('.').pop() ?? 'bin';
-  const path = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  // Stronger unique path: userId / timestamp + random + original sanitised name
+  const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `${userId}/${Date.now()}_${crypto.randomUUID()}_${safe}`;
 
   if (onProgress) {
     await uploadWithProgress(file, path, onProgress);
   } else {
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, { cacheControl: '3600', upsert: false });
+      .upload(path, file, { cacheControl: '3600', upsert: true }); // upsert:true avoids 409
 
     if (error) throw new Error(error.message);
   }
@@ -39,7 +41,7 @@ async function uploadWithProgress(
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
     xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
-    xhr.setRequestHeader('x-upsert', 'false');
+    xhr.setRequestHeader('x-upsert', 'true');   // ← was 'false', caused 409 on retry
     xhr.setRequestHeader('cache-control', '3600');
 
     xhr.upload.addEventListener('progress', (e) => {
@@ -75,10 +77,6 @@ export function getPublicUrl(path: string): string {
   return data.publicUrl;
 }
 
-/**
- * Returns a short-lived signed URL for private buckets.
- * Use this instead of getPublicUrl when the bucket is not public.
- */
 export async function getSignedUrl(path: string, expiresInSeconds = 3600): Promise<string> {
   const { data, error } = await supabase.storage
     .from(BUCKET)
@@ -108,7 +106,6 @@ export async function downloadFile(path: string, filename: string): Promise<void
     a.download = filename;
     a.click();
   } finally {
-    // Always revoke — even if the click throws
     URL.revokeObjectURL(url);
   }
 }
