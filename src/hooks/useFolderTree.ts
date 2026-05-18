@@ -29,51 +29,30 @@ const db = supabase as any;
 export function useFolderTree(groupId: string) {
   const { user } = useAuth();
   const [roots,   setRoots]   = useState<FolderRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Start as true when groupId already present — no loading=false flash before fetch
+  const [loading, setLoading] = useState(!!groupId);
   const [error,   setError]   = useState<string | null>(null);
 
-  // Keep a ref for use inside callbacks that need the latest values
   const userRef = useRef(user);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // ── fetchFolders ──────────────────────────────────────────────────────────
-  // Accepts groupId as a parameter so it always uses the current value,
-  // not a stale closure or ref.
-
-  // const fetchFolders = useCallback(async (gid: string) => {
-  //   const u = userRef.current;
-  //   if (!u || !gid) return;
-
-  //   setLoading(true);
-  //   setError(null);
-
-  //   try {
-  //     const { data, error: fetchError } = await db
-  //       .from('subprojects')
-  //       .select('*')
-  //       .eq('group_id', gid)
-  //       .order('created_at', { ascending: true });
   const fetchFolders = useCallback(async (gid: string) => {
-  const u = userRef.current;
-  
-  console.log('[fetchFolders] called with gid:', gid, '| user:', u?.id ?? 'NULL');
-  
-  if (!u || !gid) {
-    console.warn('[fetchFolders] early return — missing user or gid');
-    return;
-  }
+    const u = userRef.current;
 
-  setLoading(true);
-  setError(null);
+    if (!u || !gid) {
+      setLoading(false);
+      return;
+    }
 
-  try {
-    const { data, error: fetchError } = await db
-      .from('subprojects')
-      .select('*')
-      .eq('group_id', gid)
-      .order('created_at', { ascending: true });
+    setLoading(true);
+    setError(null);
 
-    console.log('[fetchFolders] data:', data, '| error:', fetchError);
+    try {
+      const { data, error: fetchError } = await db
+        .from('subprojects')
+        .select('*')
+        .eq('group_id', gid)
+        .order('created_at', { ascending: true });
 
       if (fetchError) throw fetchError;
 
@@ -107,9 +86,8 @@ export function useFolderTree(groupId: string) {
     } finally {
       setLoading(false);
     }
-  }, []); // no deps — gid is passed in, user comes from ref
+  }, []);
 
-  // Re-fetch whenever groupId or user changes
   useEffect(() => {
     if (!user || !groupId) {
       setRoots([]);
@@ -117,10 +95,10 @@ export function useFolderTree(groupId: string) {
       return;
     }
 
+    // Set synchronously before async fetch — closes the flash gap
+    setLoading(true);
     fetchFolders(groupId);
   }, [user, groupId, fetchFolders]);
-
-  // ── refetch (public, uses current groupId) ────────────────────────────────
 
   const refetch = useCallback(() => fetchFolders(groupId), [fetchFolders, groupId]);
 

@@ -7,15 +7,17 @@ import { GroupCard } from '../components/groups/GroupCard';
 import GroupDetail from '../components/groups/GroupDetail';
 import { Button } from '../components/ui/index';
 import { Plus } from 'lucide-react';
-import { useGroups } from '../hooks/useGroups'; // Import the hooks from their new home
+import { useGroups } from '../hooks/useGroups';
+import { usePermissions } from '../hooks/Usepermissions';
 import type { Group } from '../components/ui/cons';
 
-// THIS MUST BE THE DEFAULT EXPORT
+
 export default function Groups() {
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [membersOpen, setMembersOpen] = useState(false);
   const { groups, loading } = useGroups();
+  const { canManageGroups } = usePermissions();
 
   function handleSelectGroup(group: Group | null) {
     setSelectedGroup(group);
@@ -39,9 +41,12 @@ export default function Groups() {
                 ← Back
               </Button>
             )}
-            <Button variant="primary" onClick={() => setCreateOpen(true)}>
-              <Plus size={13} /> New Group
-            </Button>
+            {/* Only admins can create groups */}
+            {canManageGroups && (
+              <Button variant="primary" onClick={() => setCreateOpen(true)}>
+                <Plus size={13} /> New Group
+              </Button>
+            )}
           </div>
         }
       />
@@ -55,7 +60,7 @@ export default function Groups() {
           ) : groups.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#4a6080', gap: 8 }}>
               <span style={{ fontSize: 40 }}>👥</span>
-              <p>No groups yet — create one to collaborate</p>
+              <p>No groups yet{canManageGroups ? ' — create one to collaborate' : ''}</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
@@ -73,10 +78,13 @@ export default function Groups() {
         )}
       </div>
 
-      <CreateGroupModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-      />
+      {/* Modal only mounts for admins — members can never trigger it */}
+      {canManageGroups && (
+        <CreateGroupModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+        />
+      )}
 
       {selectedGroup && (
         <GroupMemberModal

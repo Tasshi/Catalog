@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
+import { GroupsProvider } from './contexts/GroupsContext';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Catalog from './pages/Catalog';
@@ -8,8 +9,7 @@ import Upload from './pages/Upload';
 import Groups from './pages/Groups';
 import FileDetail from './pages/FileDetail';
 import Settings from './pages/Settings';
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
+import ChangePassword from './pages/ChangePassword';              // ← added
 
 const styles = {
   loadingScreen: [
@@ -20,8 +20,6 @@ const styles = {
   loadingIcon:  'text-4xl mb-3',
   loadingText:  'text-sm',
 } as const;
-
-// ─── Loading screen (shared by both guards) ───────────────────────────────────
 
 function LoadingScreen() {
   return (
@@ -34,46 +32,45 @@ function LoadingScreen() {
   );
 }
 
-// ─── Guards ───────────────────────────────────────────────────────────────────
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-
-  // Wait for Supabase to resolve the session (including OAuth redirects)
-  // before deciding whether to render children or redirect to /auth.
   if (loading) return <LoadingScreen />;
-  return user ? <>{children}</> : <Navigate to="/auth" replace />;
+  return user
+    ? <GroupsProvider>{children}</GroupsProvider>
+    : <Navigate to="/auth" replace />;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-
-  // Bug fix: the original code used `user` without checking `loading` here.
-  // When Google redirects back, user is null while loading is still true —
-  // so <Auth /> rendered immediately, and the session arrived too late.
-  // Waiting for loading=false before evaluating user fixes the redirect loop.
   if (loading) return <LoadingScreen />;
-  return user ? <Navigate to="/" replace /> : <>{children}</>;
+  return user ? <Navigate to="/catalog" replace /> : <>{children}</>;
 }
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!profile) return <LoadingScreen />;
+  return profile.role === 'admin'
+    ? <GroupsProvider>{children}</GroupsProvider>
+    : <Navigate to="/catalog" replace />;
+}
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/auth"      element={<PublicRoute><Auth /></PublicRoute>} />
-      <Route path="/"          element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/catalog"   element={<ProtectedRoute><Catalog /></ProtectedRoute>} />
-      <Route path="/upload"    element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-      <Route path="/groups"    element={<ProtectedRoute><Groups /></ProtectedRoute>} />
-      <Route path="/files/:id" element={<ProtectedRoute><FileDetail /></ProtectedRoute>} />
-      <Route path="/settings"  element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="*"          element={<Navigate to="/" replace />} />
+      <Route path="/auth"            element={<PublicRoute><Auth /></PublicRoute>} />
+      <Route path="/"                element={<AdminRoute><Dashboard /></AdminRoute>} />
+      <Route path="/catalog"         element={<ProtectedRoute><Catalog /></ProtectedRoute>} />
+      <Route path="/upload"          element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+      <Route path="/groups"          element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+      <Route path="/files/:id"       element={<ProtectedRoute><FileDetail /></ProtectedRoute>} />
+      <Route path="/settings"        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />  {/* ← added */}
+      <Route path="*"                element={<Navigate to="/catalog" replace />} />
     </Routes>
   );
 }
-
-// ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
   return (
