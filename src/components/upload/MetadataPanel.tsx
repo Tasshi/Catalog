@@ -319,15 +319,23 @@
 // // ── SubGroup Picker ────────────────────────────────────────────────────────
 
 // interface SubGroupPickerProps {
-//   groupId:           string;
+//   groupId:            string;
 //   selectedSubGroupId: string | null;
-//   onSelect:          (id: string | null) => void;
+//   onSelect:           (id: string | null) => void;
 // }
 
 // function SubGroupPicker({ groupId, selectedSubGroupId, onSelect }: SubGroupPickerProps) {
 //   const { subGroups, loading } = useSubGroups(groupId);
+//   // "settled" prevents the empty-state from flashing before the first fetch completes.
+//   // useSubGroups may initialise with loading=false and an empty array, causing the
+//   // empty state to render twice: once before the fetch and once after.
+//   const [settled, setSettled] = useState(false);
 
-//   if (loading) {
+//   useEffect(() => {
+//     if (!loading) setSettled(true);
+//   }, [loading]);
+
+//   if (loading || !settled) {
 //     return (
 //       <div className="mt-2 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#D4DEE9] bg-white">
 //         <Loader2 size={13} className="animate-spin text-[#533AFD]" />
@@ -621,7 +629,7 @@
 //       tags,
 //       groupId:    selectedGroupId,
 //       subGroupId: selectedSubGroupId,
-//       folderId:   selectedFolderId,   // ← passed through to upload handler
+//       folderId:   selectedFolderId,
 //     });
 //   }
 
@@ -709,7 +717,7 @@
 //                   onSelect={setSelectedSubGroupId}
 //                 />
 
-//                 {/* Folder picker — fetches subprojects for selected group */}
+//                 {/* Folder picker */}
 //                 <FolderPicker
 //                   roots={folderRoots}
 //                   loading={foldersLoading}
@@ -1081,9 +1089,6 @@ interface SubGroupPickerProps {
 
 function SubGroupPicker({ groupId, selectedSubGroupId, onSelect }: SubGroupPickerProps) {
   const { subGroups, loading } = useSubGroups(groupId);
-  // "settled" prevents the empty-state from flashing before the first fetch completes.
-  // useSubGroups may initialise with loading=false and an empty array, causing the
-  // empty state to render twice: once before the fetch and once after.
   const [settled, setSettled] = useState(false);
 
   useEffect(() => {
@@ -1111,13 +1116,11 @@ function SubGroupPicker({ groupId, selectedSubGroupId, onSelect }: SubGroupPicke
 
   return (
     <div className="mt-2 rounded-lg border border-[#D4DEE9] bg-white overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[#E5EDF5] bg-[#F8FAFC]">
         <Layers size={12} className="text-[#64748D]" />
         <span className="text-xs font-semibold text-[#64748D]">Select Team</span>
       </div>
 
-      {/* "Share with whole project" option */}
       <button
         type="button"
         onClick={() => onSelect(null)}
@@ -1133,7 +1136,6 @@ function SubGroupPicker({ groupId, selectedSubGroupId, onSelect }: SubGroupPicke
         {selectedSubGroupId === null && <Check size={13} className="text-[#533AFD] flex-shrink-0" />}
       </button>
 
-      {/* Sub-group rows */}
       {subGroups.map((sg: SubGroup, idx: number) => {
         const isSel = selectedSubGroupId === sg.id;
         return (
@@ -1206,13 +1208,11 @@ function FolderPicker({ roots, loading, selectedId, onSelect }: FolderPickerProp
 
   return (
     <div className="mt-2 rounded-lg border border-[#D4DEE9] bg-white overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[#E5EDF5] bg-[#F8FAFC]">
         <Folder size={12} className="text-[#64748D]" />
         <span className="text-xs font-semibold text-[#64748D]">Select Folder</span>
       </div>
 
-      {/* No folder option */}
       <button
         type="button"
         onClick={() => onSelect(null)}
@@ -1228,7 +1228,6 @@ function FolderPicker({ roots, loading, selectedId, onSelect }: FolderPickerProp
         {selectedId === null && <Check size={13} className="text-[#533AFD] flex-shrink-0" />}
       </button>
 
-      {/* Folder rows */}
       {flat.map((f, idx) => {
         const isSel = selectedId === f.id;
         return (
@@ -1341,6 +1340,7 @@ function MembersSection({ groupId }: { groupId: string }) {
 export default function MetadataPanel({ file, onSubmit, uploading, progress }: MetadataPanelProps) {
   const { groups, loading: groupsLoading } = useGroups() as { groups: Group[]; loading: boolean };
 
+  const [projectName,        setProjectName]        = useState('');         // ← NEW
   const [description,        setDescription]        = useState('');
   const [tags,               setTags]               = useState<string[]>([]);
   const [tagInput,           setTagInput]           = useState('');
@@ -1348,7 +1348,6 @@ export default function MetadataPanel({ file, onSubmit, uploading, progress }: M
   const [selectedSubGroupId, setSelectedSubGroupId] = useState<string | null>(null);
   const [selectedFolderId,   setSelectedFolderId]   = useState<string | null>(null);
 
-  // ── Fetch folders whenever a group is selected ──────────────────────────
   const {
     roots:   folderRoots,
     loading: foldersLoading,
@@ -1356,7 +1355,6 @@ export default function MetadataPanel({ file, onSubmit, uploading, progress }: M
 
   const hasFile = !!file;
 
-  // Reset sub-group and folder whenever project changes
   function handleGroupSelect(id: string | null) {
     setSelectedGroupId(id);
     setSelectedSubGroupId(null);
@@ -1380,6 +1378,7 @@ export default function MetadataPanel({ file, onSubmit, uploading, progress }: M
     if (!file) return;
     onSubmit({
       file,
+      projectName,                  // ← NEW
       description,
       tags,
       groupId:    selectedGroupId,
@@ -1401,6 +1400,25 @@ export default function MetadataPanel({ file, onSubmit, uploading, progress }: M
           : <div className="text-sm font-medium text-[#533AFD] break-all">{file.name}</div>
         }
       </div>
+
+      {/* ── Project name (NEW) ─────────────────────────────────────────── */}
+      <FormField label="Project name">
+        <input
+          type="text"
+          placeholder="e.g. Brand refresh 2026…"
+          value={projectName}
+          onChange={e => setProjectName(e.target.value)}
+          disabled={!hasFile}
+          className={[
+            'w-full text-sm text-[#061B31] bg-white',
+            'border border-[#D4DEE9] rounded px-4 py-2.5 leading-[21px]',
+            'placeholder-[#64748D]/70 outline-none',
+            'focus:border-2 focus:border-[#533AFD] focus:ring-[3px] focus:ring-[#533AFD]/10',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'transition-all duration-150',
+          ].join(' ')}
+        />
+      </FormField>
 
       {/* Description */}
       <FormField label="Description">
@@ -1455,7 +1473,6 @@ export default function MetadataPanel({ file, onSubmit, uploading, progress }: M
           </div>
         ) : (
           <>
-            {/* Project picker */}
             <GroupDropdown
               groups={groups}
               selectedGroupId={selectedGroupId}
@@ -1465,14 +1482,12 @@ export default function MetadataPanel({ file, onSubmit, uploading, progress }: M
 
             {selectedGroupId && hasFile && (
               <>
-                {/* Team picker */}
                 <SubGroupPicker
                   groupId={selectedGroupId}
                   selectedSubGroupId={selectedSubGroupId}
                   onSelect={setSelectedSubGroupId}
                 />
 
-                {/* Folder picker */}
                 <FolderPicker
                   roots={folderRoots}
                   loading={foldersLoading}
@@ -1480,7 +1495,6 @@ export default function MetadataPanel({ file, onSubmit, uploading, progress }: M
                   onSelect={setSelectedFolderId}
                 />
 
-                {/* Members list */}
                 <MembersSection groupId={selectedGroupId} />
               </>
             )}

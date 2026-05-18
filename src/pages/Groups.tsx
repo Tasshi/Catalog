@@ -44,7 +44,7 @@ export default function Groups() {
             {/* Only admins can create groups */}
             {canManageGroups && (
               <Button variant="primary" onClick={() => setCreateOpen(true)}>
-                <Plus size={13} /> New Group
+                <Plus size={13} /> New Cohort
               </Button>
             )}
           </div>

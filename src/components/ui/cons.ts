@@ -169,3 +169,13 @@ export interface FileDetail {
   uploaded_by_profile?: { full_name: string } | null;
   group?: { name: string; icon: string; description?: string } | null;
 }
+
+export interface UploadPayload {
+  file:        File;
+  projectName: string;   // ← ADD THIS
+  description: string;
+  tags:        string[];
+  groupId:     string | null;
+  subGroupId:  string | null;
+  folderId:    string | null;
+}

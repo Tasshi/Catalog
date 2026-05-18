@@ -22,7 +22,7 @@ export default function Header({ title, search, onSearch, actions }: HeaderProps
       {actions}
 
       <Button variant="primary" onClick={() => navigate('/upload')}>
-        <Upload size={14} strokeWidth={1.5} /> Upload
+        <Upload size={14} strokeWidth={1.5} /> Create Project
       </Button>
     </header>
   );
