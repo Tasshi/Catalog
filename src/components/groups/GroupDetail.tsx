@@ -70,7 +70,14 @@ function GroupDetailInner({ group }: GroupDetailProps) {
 
           if (!data?.id) continue;
 
-          await autoSortFile(data.id, file.name, folderId);
+          // ✅ FIX: Only auto-sort when uploading to root (no folder selected).
+          // If a folderId is already provided, the file is already assigned to
+          // that folder via the DB insert — calling autoSortFile would
+          // unnecessarily create or reassign folders.
+          // Also skip auto-sort if the group has no cohort context.
+          if (!folderId && group.cohort) {
+            await autoSortFile(data.id, file.name, null);
+          }
         } catch (err) {
           console.error('[handleUploadToFolder] failed for', file.name, err);
         }
@@ -79,7 +86,7 @@ function GroupDetailInner({ group }: GroupDetailProps) {
       await refetchFiles();
       await refetchFolders();
     },
-    [uploadFile, group.id, autoSortFile, refetchFiles, refetchFolders],
+    [uploadFile, group.id, group.cohort, autoSortFile, refetchFiles, refetchFolders],
   );
 
   const handleConfirmMove = useCallback(
@@ -99,12 +106,13 @@ function GroupDetailInner({ group }: GroupDetailProps) {
     },
     [moveFileToFolder, refetchFiles],
   );
-      const handleAddSubFolder = useCallback(
-      async (name: string, parentId: string, icon?: string) => {
-        await createFolder(name, parentId, icon);  // correctly calls hook's createFolder
-      },
-      [createFolder],
-    );
+
+  const handleAddSubFolder = useCallback(
+    async (name: string, parentId: string, icon?: string) => {
+      await createFolder(name, parentId, icon);
+    },
+    [createFolder],
+  );
 
   if (error) {
     return (

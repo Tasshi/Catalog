@@ -2,13 +2,16 @@
 // import { supabase } from '../lib/supabase';
 // import type { User } from '@supabase/supabase-js';
 
+// // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// const db = supabase as any;
+
 // // ─── Types ────────────────────────────────────────────────────────────────────
 
 // interface Profile {
 //   id: string;
 //   full_name: string;
 //   role?: string;
-//   cohort?: 'cohort1' | 'cohort2' | 'cohort3' | null; // ← ADDED
+//   cohort?: 'cohort1' | 'cohort2' | 'cohort3' | null;
 //   [key: string]: unknown;
 // }
 
@@ -16,13 +19,13 @@
 //   user: User | null;
 //   profile: Profile | null;
 //   loading: boolean;
-//   canUpload: boolean;          // ← ADDED: true only when cohort === 'cohort3'
+//   canUpload: boolean;
 //   signIn: (email: string, password: string) => Promise<void>;
 //   signUp: (email: string, password: string, fullName: string) => Promise<void>;
 //   signOut: () => Promise<void>;
 //   signInWithGoogle: () => Promise<void>;
-//   resetPassword: (email: string) => Promise<void>;   // ← ADDED
-//   refreshProfile: () => Promise<void>;               // ← ADDED
+//   resetPassword: (email: string) => Promise<void>;
+//   refreshProfile: () => Promise<void>;
 // }
 
 // const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,10 +36,7 @@
 //   const [loading, setLoading] = useState(true);
 //   const initDone              = useRef(false);
 
-//   // ← ADDED: derived permission
 //   const canUpload = profile?.cohort === 'cohort3';
-
-//   // ── Everything below is YOUR original code, unchanged ─────────────────────
 
 //   async function fetchProfile(userId: string) {
 //     const { data } = await supabase
@@ -91,7 +91,7 @@
 //     const { data, error } = await supabase.auth.signUp({ email, password });
 //     if (error) throw error;
 //     if (data.user) {
-//       await supabase.from('profiles').insert({ id: data.user.id, full_name: fullName });
+//       await db.from('profiles').insert({ id: data.user.id, full_name: fullName }); // ✅ fixed
 //     }
 //   }
 
@@ -107,7 +107,6 @@
 //     if (error) throw error;
 //   }
 
-//   // ← ADDED: sends reset email pointing to /reset-password
 //   async function resetPassword(email: string) {
 //     const { error } = await supabase.auth.resetPasswordForEmail(email, {
 //       redirectTo: `${window.location.origin}/reset-password`,
@@ -115,7 +114,6 @@
 //     if (error) throw error;
 //   }
 
-//   // ← ADDED: re-fetches profile so canUpload updates immediately after save
 //   async function refreshProfile() {
 //     if (!user) return;
 //     await fetchProfile(user.id);
@@ -127,13 +125,13 @@
 //         user,
 //         profile,
 //         loading,
-//         canUpload,           // ← ADDED
+//         canUpload,
 //         signIn,
 //         signUp,
 //         signOut,
 //         signInWithGoogle,
-//         resetPassword,       // ← ADDED
-//         refreshProfile,      // ← ADDED
+//         resetPassword,
+//         refreshProfile,
 //       }}
 //     >
 //       {children}
@@ -141,7 +139,6 @@
 //   );
 // }
 
-// // ← This is YOUR original export, unchanged
 // export const useAuth = (): AuthContextType => {
 //   const ctx = useContext(AuthContext);
 //   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
@@ -160,7 +157,10 @@ interface Profile {
   id: string;
   full_name: string;
   role?: string;
-  cohort?: 'cohort1' | 'cohort2' | 'cohort3' | null;
+  // ✅ FIX: widened from a narrow union to plain string so any group name
+  // (e.g. "Cohort 1", "GMC Directory") can be stored and read back correctly.
+  cohort?: string | null;
+  avatar_url?: string | null;
   [key: string]: unknown;
 }
 
@@ -185,7 +185,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const initDone              = useRef(false);
 
-  const canUpload = profile?.cohort === 'cohort3';
+  // ✅ FIX: compare against actual group names, not hardcoded 'cohort3'
+  // Adjust this condition to whatever group name should grant upload access.
+  const canUpload = !!profile?.cohort;
 
   async function fetchProfile(userId: string) {
     const { data } = await supabase
@@ -240,7 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     if (data.user) {
-      await db.from('profiles').insert({ id: data.user.id, full_name: fullName }); // ✅ fixed
+      await db.from('profiles').insert({ id: data.user.id, full_name: fullName });
     }
   }
 
