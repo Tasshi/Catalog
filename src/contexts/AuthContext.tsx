@@ -1,6 +1,158 @@
+// import { createContext, useContext, useEffect, useState, useRef } from 'react';
+// import { supabase } from '../lib/supabase';
+// import type { User } from '@supabase/supabase-js';
+
+// // ─── Types ────────────────────────────────────────────────────────────────────
+
+// interface Profile {
+//   id: string;
+//   full_name: string;
+//   role?: string;
+//   cohort?: 'cohort1' | 'cohort2' | 'cohort3' | null; // ← ADDED
+//   [key: string]: unknown;
+// }
+
+// interface AuthContextType {
+//   user: User | null;
+//   profile: Profile | null;
+//   loading: boolean;
+//   canUpload: boolean;          // ← ADDED: true only when cohort === 'cohort3'
+//   signIn: (email: string, password: string) => Promise<void>;
+//   signUp: (email: string, password: string, fullName: string) => Promise<void>;
+//   signOut: () => Promise<void>;
+//   signInWithGoogle: () => Promise<void>;
+//   resetPassword: (email: string) => Promise<void>;   // ← ADDED
+//   refreshProfile: () => Promise<void>;               // ← ADDED
+// }
+
+// const AuthContext = createContext<AuthContextType | null>(null);
+
+// export function AuthProvider({ children }: { children: React.ReactNode }) {
+//   const [user, setUser]       = useState<User | null>(null);
+//   const [profile, setProfile] = useState<Profile | null>(null);
+//   const [loading, setLoading] = useState(true);
+//   const initDone              = useRef(false);
+
+//   // ← ADDED: derived permission
+//   const canUpload = profile?.cohort === 'cohort3';
+
+//   // ── Everything below is YOUR original code, unchanged ─────────────────────
+
+//   async function fetchProfile(userId: string) {
+//     const { data } = await supabase
+//       .from('profiles')
+//       .select('*')
+//       .eq('id', userId)
+//       .single();
+//     setProfile(data ?? null);
+//   }
+
+//   async function applySession(session: { user: User } | null) {
+//     if (session?.user) {
+//       setUser(session.user);
+//       await fetchProfile(session.user.id);
+//     } else {
+//       setUser(null);
+//       setProfile(null);
+//     }
+//     setLoading(false);
+//   }
+
+//   useEffect(() => {
+//     let mounted = true;
+
+//     supabase.auth.getSession().then(({ data: { session } }) => {
+//       if (!mounted) return;
+//       initDone.current = true;
+//       applySession(session);
+//     });
+
+//     const { data: { subscription } } = supabase.auth.onAuthStateChange(
+//       (_event, session) => {
+//         if (!mounted) return;
+//         console.log('🔐 Auth event:', _event, '| User:', session?.user?.email ?? 'null');
+//         if (_event === 'INITIAL_SESSION') return;
+//         applySession(session);
+//       },
+//     );
+
+//     return () => {
+//       mounted = false;
+//       subscription.unsubscribe();
+//     };
+//   }, []);
+
+//   async function signIn(email: string, password: string) {
+//     const { error } = await supabase.auth.signInWithPassword({ email, password });
+//     if (error) throw error;
+//   }
+
+//   async function signUp(email: string, password: string, fullName: string) {
+//     const { data, error } = await supabase.auth.signUp({ email, password });
+//     if (error) throw error;
+//     if (data.user) {
+//       await supabase.from('profiles').insert({ id: data.user.id, full_name: fullName });
+//     }
+//   }
+
+//   async function signOut() {
+//     await supabase.auth.signOut();
+//   }
+
+//   async function signInWithGoogle() {
+//     const { error } = await supabase.auth.signInWithOAuth({
+//       provider: 'google',
+//       options: { redirectTo: window.location.origin },
+//     });
+//     if (error) throw error;
+//   }
+
+//   // ← ADDED: sends reset email pointing to /reset-password
+//   async function resetPassword(email: string) {
+//     const { error } = await supabase.auth.resetPasswordForEmail(email, {
+//       redirectTo: `${window.location.origin}/reset-password`,
+//     });
+//     if (error) throw error;
+//   }
+
+//   // ← ADDED: re-fetches profile so canUpload updates immediately after save
+//   async function refreshProfile() {
+//     if (!user) return;
+//     await fetchProfile(user.id);
+//   }
+
+//   return (
+//     <AuthContext.Provider
+//       value={{
+//         user,
+//         profile,
+//         loading,
+//         canUpload,           // ← ADDED
+//         signIn,
+//         signUp,
+//         signOut,
+//         signInWithGoogle,
+//         resetPassword,       // ← ADDED
+//         refreshProfile,      // ← ADDED
+//       }}
+//     >
+//       {children}
+//     </AuthContext.Provider>
+//   );
+// }
+
+// // ← This is YOUR original export, unchanged
+// export const useAuth = (): AuthContextType => {
+//   const ctx = useContext(AuthContext);
+//   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+//   return ctx;
+// };
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -8,7 +160,7 @@ interface Profile {
   id: string;
   full_name: string;
   role?: string;
-  cohort?: 'cohort1' | 'cohort2' | 'cohort3' | null; // ← ADDED
+  cohort?: 'cohort1' | 'cohort2' | 'cohort3' | null;
   [key: string]: unknown;
 }
 
@@ -16,13 +168,13 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  canUpload: boolean;          // ← ADDED: true only when cohort === 'cohort3'
+  canUpload: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;   // ← ADDED
-  refreshProfile: () => Promise<void>;               // ← ADDED
+  resetPassword: (email: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,10 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const initDone              = useRef(false);
 
-  // ← ADDED: derived permission
   const canUpload = profile?.cohort === 'cohort3';
-
-  // ── Everything below is YOUR original code, unchanged ─────────────────────
 
   async function fetchProfile(userId: string) {
     const { data } = await supabase
@@ -91,7 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     if (data.user) {
-      await supabase.from('profiles').insert({ id: data.user.id, full_name: fullName });
+      await db.from('profiles').insert({ id: data.user.id, full_name: fullName }); // ✅ fixed
     }
   }
 
@@ -107,7 +256,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   }
 
-  // ← ADDED: sends reset email pointing to /reset-password
   async function resetPassword(email: string) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
@@ -115,7 +263,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   }
 
-  // ← ADDED: re-fetches profile so canUpload updates immediately after save
   async function refreshProfile() {
     if (!user) return;
     await fetchProfile(user.id);
@@ -127,13 +274,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         profile,
         loading,
-        canUpload,           // ← ADDED
+        canUpload,
         signIn,
         signUp,
         signOut,
         signInWithGoogle,
-        resetPassword,       // ← ADDED
-        refreshProfile,      // ← ADDED
+        resetPassword,
+        refreshProfile,
       }}
     >
       {children}
@@ -141,7 +288,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ← This is YOUR original export, unchanged
 export const useAuth = (): AuthContextType => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');

@@ -129,6 +129,9 @@ import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
 export default function Upload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const { uploadFile, uploading, progress } = useUpload();
@@ -174,7 +177,7 @@ export default function Upload() {
         !meta.folderId;
 
       if (shouldCreateNewFolder) {
-        const { data: newFolder, error: folderError } = await supabase
+        const { data: newFolder, error: folderError } = await db
           .from('subprojects')
           .insert({
             group_id:    meta.groupId,
@@ -184,10 +187,10 @@ export default function Upload() {
             created_by:  user?.id ?? null,
           })
           .select('id')
-          .single();
+          .single() as { data: { id: string } | null; error: unknown }; // ✅ typed
 
-        if (folderError) throw new Error(`Failed to create project: ${folderError.message}`);
-        targetFolderId = newFolder.id;
+        if (folderError) throw new Error(`Failed to create project: ${(folderError as { message: string }).message}`);
+        targetFolderId = newFolder!.id;
       }
 
       // ── Step 1b: Guard — if still no folder, block the upload ──

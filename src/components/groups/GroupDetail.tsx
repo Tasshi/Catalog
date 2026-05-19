@@ -99,13 +99,12 @@ function GroupDetailInner({ group }: GroupDetailProps) {
     },
     [moveFileToFolder, refetchFiles],
   );
-
-  const handleAddSubFolder = useCallback(
-    async (parentId: string, name: string, icon: string) => {
-      await createFolder(name, parentId, icon);
-    },
-    [createFolder],
-  );
+      const handleAddSubFolder = useCallback(
+      async (name: string, parentId: string, icon?: string) => {
+        await createFolder(name, parentId, icon);  // correctly calls hook's createFolder
+      },
+      [createFolder],
+    );
 
   if (error) {
     return (

@@ -78,6 +78,9 @@ import { uploadFile as storageUpload } from '../lib/storage';
 import { extractAutoMetadata } from '../lib/metadata';
 import { useAuth } from '../contexts/AuthContext';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
 export function useUpload() {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
@@ -106,7 +109,7 @@ export function useUpload() {
       const storagePath = await storageUpload(file, user.id, setProgress);
       const auto = extractAutoMetadata(file);
 
-      const { data, error: insertError } = await supabase
+      const { data, error: insertError } = await db
         .from('files')
         .insert({
           name:         auto.name,
@@ -121,12 +124,12 @@ export function useUpload() {
           version:      1,
         })
         .select()
-        .single();
+        .single() as { data: { id: string } | null; error: unknown }; // ✅ typed
 
       if (insertError) throw insertError;
 
-      await supabase.from('audit_logs').insert({
-        file_id: data.id,
+      await db.from('audit_logs').insert({  // ✅ fixed
+        file_id: data!.id,
         user_id: user.id,
         action:  'upload',
       });
