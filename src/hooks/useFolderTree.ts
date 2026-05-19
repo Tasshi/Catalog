@@ -29,7 +29,6 @@ const db = supabase as any;
 export function useFolderTree(groupId: string) {
   const { user } = useAuth();
   const [roots,   setRoots]   = useState<FolderRecord[]>([]);
-  // Start as true when groupId already present — no loading=false flash before fetch
   const [loading, setLoading] = useState(!!groupId);
   const [error,   setError]   = useState<string | null>(null);
 
@@ -40,6 +39,7 @@ export function useFolderTree(groupId: string) {
     const u = userRef.current;
 
     if (!u || !gid) {
+      setRoots([]);
       setLoading(false);
       return;
     }
@@ -89,15 +89,8 @@ export function useFolderTree(groupId: string) {
   }, []);
 
   useEffect(() => {
-    if (!user || !groupId) {
-      setRoots([]);
-      setLoading(false);
-      return;
-    }
-
-    // Set synchronously before async fetch — closes the flash gap
-    setLoading(true);
-    fetchFolders(groupId);
+    if (!user || !groupId) return;
+    void (async () => { await fetchFolders(groupId); })();
   }, [user, groupId, fetchFolders]);
 
   const refetch = useCallback(() => fetchFolders(groupId), [fetchFolders, groupId]);
@@ -107,7 +100,6 @@ export function useFolderTree(groupId: string) {
   const createFolder = useCallback(async (
     name: string,
     parentId: string | null,
-    _icon = '📁',
   ): Promise<string | null> => {
     const u = userRef.current;
     if (!u || !groupId) return null;

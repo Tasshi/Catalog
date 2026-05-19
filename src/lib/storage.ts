@@ -9,7 +9,7 @@ export async function uploadFile(
   userId: string,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  const ext  = file.name.split('.').pop() ?? 'bin';
+  //const ext  = file.name.split('.').pop() ?? 'bin';
   // Stronger unique path: userId / timestamp + random + original sanitised name
   const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `${userId}/${Date.now()}_${crypto.randomUUID()}_${safe}`;
@@ -94,21 +94,22 @@ export async function deleteStorageFile(path: string): Promise<void> {
 }
 
 // ── Download ───────────────────────────────────────────────────────────────────
+  export async function downloadFile(path: string, filename: string): Promise<void> {
+    const cleanPath = path.startsWith(`${BUCKET}/`) ? path.slice(BUCKET.length + 1) : path;  // ← add this
 
-export async function downloadFile(path: string, filename: string): Promise<void> {
-  const { data, error } = await supabase.storage.from(BUCKET).download(path);
-  if (error) throw new Error(error.message);
+    const { data, error } = await supabase.storage.from(BUCKET).download(cleanPath);  // ← use cleanPath
+    if (error) throw new Error(error.message);
 
-  const url = URL.createObjectURL(data);
-  try {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-  } finally {
-    URL.revokeObjectURL(url);
+    const url = URL.createObjectURL(data);
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   }
-}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 

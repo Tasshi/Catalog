@@ -56,9 +56,11 @@ const s = {
 
 export default function VersionHistory({
   fileId,
-  currentVersion: __currentVersion }: { fileId: string; currentVersion: number })
-
-{
+  currentVersion,
+}: {
+  fileId: string;
+  currentVersion: number;
+}) {
   const [versions, setVersions] = useState<Version[]>([]);
 
   useEffect(() => {
@@ -77,8 +79,8 @@ export default function VersionHistory({
 
   return (
     <div className={s.list} aria-label="Version history">
-      {versions.map((v, i) => {
-        const isCurrent = i === 0;
+      {versions.map(v => {
+        const isCurrent = v.version_number === currentVersion;
 
         return (
           <div key={v.id} className={s.row}>

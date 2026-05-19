@@ -32,6 +32,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   width?: number;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export interface ToastProps {
@@ -83,7 +84,7 @@ export interface MetadataPanelProps {
     description: string;
     tags: string[];
     groupId: string | null;
-    subGroupId: string | null; // ← added
+    subGroupId: string | null;
   }) => void;
   uploading: boolean;
   progress: number;
@@ -94,12 +95,13 @@ export interface FileItem {
   name: string;
   ext?: string;
   file_type?: string;
+  storage_path: string;
   sizeFormatted?: string;
   created_at?: string;
   groupName?: string;
   groupIcon?: string;
   authorName?: string;
-  size_bytes?: string;
+  size_bytes?: number;
   group_id?: string | null;
 }
 
@@ -130,6 +132,7 @@ export type GroupMember = {
   user_id: string;
   role: string;
   created_at?: string;
+  joined_at: string | null;
   profile?: {
     id: string;
     full_name?: string | null;
@@ -138,22 +141,6 @@ export type GroupMember = {
     avatar_url?: string | null;
   } | null;
 };
-
-export interface FileRecord {
-  id: string;
-  name: string;
-  size_bytes: number;
-  is_deleted: boolean;
-  created_at: string;
-  group_id: string | null;
-  folder_id: string | null;
-  uploaded_by: string;
-  ext: string;
-  sizeFormatted: string;
-  authorName: string;
-  groupName: string | null;
-  groupIcon: string | null;
-}
 
 export interface FileDetail {
   id: string;
@@ -173,13 +160,14 @@ export interface FileDetail {
 
 export interface UploadPayload {
   file:        File;
-  projectName: string;   // ← ADD THIS
+  projectName: string;
   description: string;
   tags:        string[];
   groupId:     string | null;
   subGroupId:  string | null;
   folderId:    string | null;
 }
+
 export interface FileRecord {
   id: string;
   name: string;
@@ -189,10 +177,10 @@ export interface FileRecord {
   group_id: string | null;
   folder_id: string | null;
   uploaded_by: string;
+  storage_path: string;
   ext: string;
   sizeFormatted: string;
   authorName: string;
-  groupName: string | null;
-  groupIcon: string | null;
-  storage_path: string;       // ← ADD THIS LINE — e.g. "group_id/timestamp_filename"
+  groupName?: string;
+  groupIcon?: string;
 }

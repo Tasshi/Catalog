@@ -7,7 +7,8 @@ import { FileRow } from '../components/catalog/FileCard';
 import { useNavigate } from 'react-router-dom';
 import { downloadFile } from '../lib/storage';
 import { useApp } from '../contexts/AppContext';
-import { Upload, FolderOpen, Users, HardDrive, Share2 } from 'lucide-react';
+import { FolderOpen, Users, HardDrive, Share2 } from 'lucide-react';
+import type { FileItem } from '../components/layout/ui/cons';
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
@@ -43,101 +44,15 @@ function StatCard({ num, label, sub, icon, accentClass = 'bg-slate-200' }: StatC
   );
 }
 
-// ─── Storage bar ──────────────────────────────────────────────────────────────
-
-function StorageBar({ usedMB }: { usedMB: number }) {
-  const QUOTA_MB = 500;
-  const pct = Math.min(100, Math.round((usedMB / QUOTA_MB) * 100));
-  const barClass =
-    pct > 85 ? 'bg-red-400' : pct > 60 ? 'bg-amber-400' : 'bg-sky-500';
-
-  return (
-    <div className="bg-white border border-[#D4DEE9] rounded-lg p-5 shadow-[0px_1px_2px_rgba(0,0,0,0.04)]">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] uppercase tracking-wider text-[#64748D] font-medium">
-          Storage
-        </span>
-        <span className="text-[12px] font-medium text-[#273951]">
-          {usedMB.toFixed(1)} MB
-          <span className="text-[#64748D] font-normal"> / {QUOTA_MB} MB</span>
-        </span>
-      </div>
-      <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${barClass}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div className="text-[11px] text-[#64748D] mt-1.5">
-        {pct}% used · {(QUOTA_MB - usedMB).toFixed(0)} MB free
-      </div>
-    </div>
-  );
-}
+// ─── Storage bar ────────────────────
 
 // ─── Quick action button ──────────────────────────────────────────────────────
 
-function QuickAction({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        'flex flex-col items-center gap-2 py-4 px-2 rounded-lg w-full',
-        'bg-white border border-[#D4DEE9]',
-        'shadow-[0px_1px_2px_rgba(0,0,0,0.04)]',
-        'transition-all duration-150',
-        'hover:border-[#B8CCDB] hover:shadow-[0px_4px_8px_rgba(0,0,0,0.07)] hover:-translate-y-0.5',
-        'text-[#50617A] cursor-pointer',
-      ].join(' ')}
-    >
-      <span className="text-[#64748D]">{icon}</span>
-      <span className="text-[11px] uppercase tracking-wider font-medium text-[#64748D]">
-        {label}
-      </span>
-    </button>
-  );
-}
+
 
 // ─── Group pill ───────────────────────────────────────────────────────────────
 
-function GroupPill({
-  group,
-  fileCount,
-  onClick,
-}: {
-  group: any;
-  fileCount: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        'flex items-center justify-between w-full',
-        'px-3 py-2 rounded-md',
-        'border border-[#D4DEE9] bg-slate-50',
-        'transition-colors duration-100 hover:bg-white hover:border-[#B8CCDB]',
-        'cursor-pointer',
-      ].join(' ')}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-sm">{group.icon ?? '📁'}</span>
-        <span className="text-[13px] text-[#273951]">{group.name}</span>
-      </div>
-      <span className="text-[11px] text-[#64748D] bg-white border border-[#D4DEE9] rounded-full px-2 py-0.5">
-        {fileCount} {fileCount === 1 ? 'file' : 'files'}
-      </span>
-    </button>
-  );
-}
+
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
@@ -153,7 +68,21 @@ export default function Dashboard() {
   const totalMB = files.reduce((s, f) => s + (f.size_bytes ?? 0), 0) / 1024 / 1024;
   const sharedCount = files.filter((f) => f.group_id).length;
 
-  async function handleDownload(file: any) {
+  // async function handleDownload(file: { storage_path: string; name: string }) {
+  //   try {
+  //     await downloadFile(file.storage_path, file.name);
+  //     showToast(`Downloading ${file.name}`);
+  //   } catch {
+  //     showToast('Download failed', 'error');
+  //   }
+  // }
+
+  // async function handleDelete(file: { storage_path: string; name: string }) {
+  //   if (!confirm(`Delete "${file.name}"?`)) return;
+  //   await deleteFile(file.id);
+  //   showToast(`"${file.name}" deleted`);
+  // }
+    async function handleDownload(file: FileItem) {
     try {
       await downloadFile(file.storage_path, file.name);
       showToast(`Downloading ${file.name}`);
@@ -162,7 +91,7 @@ export default function Dashboard() {
     }
   }
 
-  async function handleDelete(file: any) {
+  async function handleDelete(file: FileItem) {
     if (!confirm(`Delete "${file.name}"?`)) return;
     await deleteFile(file.id);
     showToast(`"${file.name}" deleted`);
@@ -187,7 +116,7 @@ export default function Dashboard() {
           />
           <StatCard
             num={groups.length}
-            label="Groups"
+            label="Cohort"
             icon={<Users size={20} strokeWidth={1.5} />}
             accentClass="bg-violet-400"
           />

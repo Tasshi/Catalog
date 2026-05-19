@@ -3,6 +3,7 @@ import { Modal, Button, Avatar } from '../layout/ui';
 import { useGroupMembers } from '../../hooks/useGroups';
 import { useApp } from '../../contexts/AppContext';
 import { Trash2 } from 'lucide-react';
+import type { Group } from '../layout/ui/cons';
 
 const ROLE_STYLES = {
   owner:  { bg: 'rgba(240,165,0,0.12)',  color: 'var(--gold)',  border: 'rgba(240,165,0,0.25)' },
@@ -10,8 +11,14 @@ const ROLE_STYLES = {
   viewer: { bg: 'var(--glass2)',         color: 'var(--text3)',  border: 'var(--border2)' },
 };
 
-export default function GroupMemberModal({ group, open, onClose }) {
-  const { members, addMember, removeMember, updateRole } = useGroupMembers(group?.id);
+interface GroupMemberModalProps {
+  group:   Group | null;
+  open:    boolean;
+  onClose: () => void;
+}
+
+export default function GroupMemberModal({ group, open, onClose }: GroupMemberModalProps) {
+  const { members, removeMember} = useGroupMembers(group?.id ?? null);
   const { showToast } = useApp();
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('viewer');
@@ -25,7 +32,7 @@ export default function GroupMemberModal({ group, open, onClose }) {
     } catch { showToast('Failed to add member', 'error'); }
   }
 
-  async function handleRemove(member) {
+  async function handleRemove(member: { id: string; role: string; profile?: { full_name: string | null } | null }) {
     await removeMember(member.id);
     showToast(`${member.profile?.full_name || 'Member'} removed`);
   }
@@ -52,7 +59,7 @@ export default function GroupMemberModal({ group, open, onClose }) {
           </thead>
           <tbody>
             {members.map(m => {
-              const roleStyle = ROLE_STYLES[m.role] || ROLE_STYLES.viewer;
+              const roleStyle = ROLE_STYLES[m.role as keyof typeof ROLE_STYLES] ?? ROLE_STYLES.viewer;
               return (
                 <tr key={m.id}>
                   <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -113,4 +120,3 @@ export default function GroupMemberModal({ group, open, onClose }) {
     </Modal>
   );
 }
-

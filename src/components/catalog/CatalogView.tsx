@@ -6,7 +6,7 @@ import { downloadFile } from '../../lib/storage';
 import { FileRow, FileCard } from './FileCard';
 import { type FileItem } from '../layout/ui/cons';
 import FilterPanel from './FilterPanel';
-import { LayoutGrid, List, FileX, Search } from 'lucide-react';
+import { LayoutGrid, List, FileX, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -14,10 +14,6 @@ type ViewMode = 'table' | 'grid';
 export type SortKey = 'newest' | 'oldest' | 'name' | 'size';
 export type FileType = 'All' | 'PDF' | 'DOCX' | 'XLSX' | 'PPTX' | 'ZIP' | 'IMG';
 
-// FileItem is imported from FileCard (re-exported from cons.ts) so this file
-// and FileCard/FileRow always share the exact same structural type.
-// A local redefinition caused TS2322 because HookFile was missing FileRecord
-// fields (size_bytes, is_deleted, group_id, uploaded_by) that cons.ts requires.
 type HookFile = ReturnType<typeof useFiles>['files'][number];
 
 interface CatalogViewProps {
@@ -34,26 +30,25 @@ const TYPE_MAP: Record<Exclude<FileType, 'All'>, string[]> = {
   ZIP:  ['zip', 'rar'],
   IMG:  ['png', 'jpg', 'jpeg', 'gif', 'webp'],
 };
+
 const SORT_FNS: Record<SortKey, (a: FileItem, b: FileItem) => number> = {
   newest: (a, b) => new Date(b.created_at ?? '').getTime() - new Date(a.created_at ?? '').getTime(),
   oldest: (a, b) => new Date(a.created_at ?? '').getTime() - new Date(b.created_at ?? '').getTime(),
   name:   (a, b) => a.name.localeCompare(b.name),
-  // Convert strings to numbers for the arithmetic operation
   size:   (a, b) => Number(b.size_bytes ?? 0) - Number(a.size_bytes ?? 0),
 };
 
 const TABLE_HEADERS = ['File', 'Type', 'Group', 'Owner', 'Date', ''] as const;
 
+const PAGE_SIZES = [10, 20, 50, 100] as const;
+
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 
 const styles = {
-  // Page wrapper
   wrapper: 'flex flex-col gap-5',
 
-  // ── Toolbar ──────────────────────────────────────────────────────────────────
+  // ── Toolbar ──
   toolbar: 'flex items-center gap-3 flex-wrap',
-
-  // Search box
   searchWrap: [
     'flex items-center gap-2 h-9 flex-1 max-w-[280px]',
     'bg-white border border-slate-200 rounded-md px-3',
@@ -65,14 +60,10 @@ const styles = {
   searchIcon: 'text-slate-400 shrink-0',
   searchInput: [
     'flex-1 bg-transparent border-none outline-none',
-    "text-[13px] text-slate-800 placeholder:text-slate-400",
+    'text-[13px] text-slate-800 placeholder:text-slate-400',
     "font-['DM_Sans',ui-sans-serif,system-ui]",
   ].join(' '),
-
-  // Spacer
   spacer: 'flex-1',
-
-  // View-mode toggle pill
   toggleWrap: [
     'flex items-center gap-0.5 p-0.5',
     'bg-slate-100 border border-slate-200 rounded-md',
@@ -83,15 +74,13 @@ const styles = {
   ].join(' '),
   viewBtnActive:   'bg-white text-indigo-600 shadow-[0_1px_3px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/80',
   viewBtnInactive: 'text-slate-400 hover:text-slate-600',
-
-  // File-count chip
   countChip: [
     'inline-flex items-center h-6 px-2 rounded-md',
     'bg-slate-50 border border-slate-200',
     'text-[11px] font-semibold tabular-nums tracking-wide text-slate-500',
   ].join(' '),
 
-  // ── Table ────────────────────────────────────────────────────────────────────
+  // ── Table ──
   tableOuter: [
     'overflow-hidden rounded-lg',
     'border border-slate-200',
@@ -99,7 +88,6 @@ const styles = {
     'bg-white',
   ].join(' '),
   table: 'w-full border-collapse',
-
   thead: 'bg-slate-50 border-b border-slate-200',
   th: [
     'text-left px-4 py-2.5',
@@ -108,13 +96,10 @@ const styles = {
   ].join(' '),
   tbody: 'divide-y divide-slate-100',
 
-  // ── Grid ─────────────────────────────────────────────────────────────────────
-  // NOTE: gridTemplateColumns uses a dynamic value not expressible as a static
-  // Tailwind class, so it lives in a dedicated CSS class defined in index.css:
-  //   .file-grid { grid-template-columns: repeat(auto-fill, minmax(192px, 1fr)); }
+  // ── Grid ──
   grid: 'grid gap-3 file-grid',
 
-  // ── Empty state ───────────────────────────────────────────────────────────────
+  // ── Empty state ──
   empty: [
     'flex flex-col items-center justify-center py-24 gap-3',
     'rounded-lg border border-dashed border-slate-200 bg-slate-50/60',
@@ -124,19 +109,37 @@ const styles = {
     'bg-white border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.08)]',
     'text-slate-300',
   ].join(' '),
-  emptyText: 'text-center',
+  emptyText:    'text-center',
   emptyHeading: 'text-sm font-medium text-slate-700',
   emptySubtext: 'text-xs text-slate-400',
 
-  // ── Loading ───────────────────────────────────────────────────────────────────
-  loading: 'flex items-center justify-center min-h-[260px]',
-  loadingInner: 'flex flex-col items-center gap-3',
+  // ── Loading ──
+  loading:        'flex items-center justify-center min-h-[260px]',
+  loadingInner:   'flex flex-col items-center gap-3',
   loadingSpinner: [
     'w-6 h-6 rounded-full border-2',
     'border-slate-200 border-t-indigo-500',
     'animate-spin',
   ].join(' '),
   loadingLabel: 'text-xs text-slate-400 font-medium tracking-wide',
+
+  // ── Pagination ──
+  paginationWrap: [
+    'flex items-center justify-between flex-wrap gap-3 pt-1',
+  ].join(' '),
+  paginationSizeWrap: 'flex items-center gap-2',
+  paginationSizeLabel: 'text-[13px] text-slate-500 whitespace-nowrap',
+  paginationSizeSelect: [
+    'h-8 px-2 pr-7 text-[13px]',
+    'border border-slate-200 rounded-md',
+    'bg-white text-slate-700',
+    'cursor-pointer outline-none',
+    'focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
+    'transition-colors duration-150',
+  ].join(' '),
+  paginationInfo: 'text-[13px] text-slate-500 tabular-nums',
+  paginationControls: 'flex items-center gap-1',
+  paginationEllipsis: 'px-1 text-[13px] text-slate-400 select-none',
 } as const;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -145,7 +148,125 @@ function viewBtnClass(active: boolean) {
   return `${styles.viewBtnBase} ${active ? styles.viewBtnActive : styles.viewBtnInactive}`;
 }
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+function pageBtnClass(active: boolean, disabled: boolean) {
+  const base = [
+    'flex items-center justify-center min-w-[32px] h-8 px-1.5 rounded-md',
+    'text-[13px] border transition-all duration-100 cursor-pointer',
+  ].join(' ');
+  if (disabled) return `${base} border-slate-200 bg-white text-slate-300 cursor-not-allowed`;
+  if (active)   return `${base} border-indigo-300 bg-indigo-50 text-indigo-600 font-medium`;
+  return `${base} border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300`;
+}
+
+function buildPageNumbers(current: number, last: number): (number | '…')[] {
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
+  const pages: (number | '…')[] = [1];
+  if (current > 3) pages.push('…');
+  const lo = Math.max(2, current - 1);
+  const hi = Math.min(last - 1, current + 1);
+  for (let i = lo; i <= hi; i++) pages.push(i);
+  if (current < last - 2) pages.push('…');
+  pages.push(last);
+  return pages;
+}
+
+// ─── Pagination sub-component ───────────────────────────────────────────────────
+
+interface PaginationProps {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (p: number) => void;
+  onPageSizeChange: (s: number) => void;
+}
+
+function Pagination({ page, pageSize, total, onPageChange, onPageSizeChange }: PaginationProps) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const start      = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end        = Math.min(page * pageSize, total);
+  const pageNums   = useMemo(() => buildPageNumbers(page, totalPages), [page, totalPages]);
+
+  const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onPageSizeChange(Number(e.target.value));
+    onPageChange(1);
+  };
+
+  return (
+    <div className={styles.paginationWrap} aria-label="Pagination">
+
+      {/* Rows per page */}
+      <div className={styles.paginationSizeWrap}>
+        <label htmlFor="pg-size" className={styles.paginationSizeLabel}>
+          Rows per page
+        </label>
+        <select
+          id="pg-size"
+          value={pageSize}
+          onChange={handleSizeChange}
+          className={styles.paginationSizeSelect}
+        >
+          {PAGE_SIZES.map(n => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Range label */}
+      <span className={styles.paginationInfo} aria-live="polite">
+        {total === 0 ? 'No files' : `${start}–${end} of ${total}`}
+      </span>
+
+      {/* Page buttons */}
+      <div className={styles.paginationControls} role="navigation" aria-label="Page navigation">
+
+        {/* Prev */}
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page === 1}
+          className={pageBtnClass(false, page === 1)}
+          aria-label="Previous page"
+        >
+          <ChevronLeft size={14} aria-hidden="true" />
+        </button>
+
+        {/* Page numbers */}
+        {pageNums.map((p, i) =>
+          p === '…' ? (
+            <span key={`ellipsis-${i}`} className={styles.paginationEllipsis} aria-hidden="true">
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onPageChange(p)}
+              className={pageBtnClass(p === page, false)}
+              aria-label={`Page ${p}`}
+              aria-current={p === page ? 'page' : undefined}
+            >
+              {p}
+            </button>
+          )
+        )}
+
+        {/* Next */}
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page === totalPages}
+          className={pageBtnClass(false, page === totalPages)}
+          aria-label="Next page"
+        >
+          <ChevronRight size={14} aria-hidden="true" />
+        </button>
+
+      </div>
+    </div>
+  );
+}
+
+// ─── CatalogView ────────────────────────────────────────────────────────────────
 
 export default function CatalogView({ groupId }: CatalogViewProps) {
   const { files, loading, deleteFile, logAction } = useFiles(groupId);
@@ -157,12 +278,25 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
   const [sortBy, setSortBy]         = useState<SortKey>('newest');
   const [viewMode, setViewMode]     = useState<ViewMode>('table');
 
-  // ── Filtering & sorting ─────────────────────────────────────────────────────
+  // ── Pagination state ─────────────────────────────────────────────────────────
+  // Bundle the page number together with the filter key it was set for.
+  // When filters change, the key won't match and we fall back to page 1 —
+  // no effect, no ref, no render-time setState.
+  const filterKey = `${search}|${activeType}|${sortBy}`;
+  const [pagination, setPagination] = useState({ filterKey, page: 1, pageSize: 20 });
+
+  const page     = pagination.filterKey === filterKey ? pagination.page : 1;
+  const pageSize = pagination.pageSize;
+
+  const setPage = (p: number) =>
+    setPagination(prev => ({ ...prev, filterKey, page: p }));
+
+  const setPageSize = (s: number) =>
+    setPagination({ filterKey, page: 1, pageSize: s });
+
+  // ── Filtering & sorting ──────────────────────────────────────────────────────
 
   const filtered = useMemo<FileItem[]>(() => {
-    // Narrow HookFile to FileItem by asserting the required fields are present.
-    // Cast through unknown first — HookFile (from useFiles) has no index signature
-    // so a direct cast to Record<string,unknown> raises TS2352.
     const baseList = (files as HookFile[]).filter(
       (f): f is HookFile & FileItem => {
         const rec = f as unknown as Record<string, unknown>;
@@ -192,24 +326,22 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
 
     if (activeType !== 'All') {
       const allowed = TYPE_MAP[activeType];
-      // Bug fix: rely solely on the well-typed file_type field; removed
-      // speculative access to a non-existent `ext` property.
-      result = result.filter(f => allowed.includes(f.file_type.toLowerCase()));
+      result = result.filter(f => allowed.includes((f.file_type ?? '').toLowerCase()));
     }
 
-    // Bug fix: sortBy is SortKey so the lookup never misses; removed the
-    // misleading SORT_FNS[sortBy] ?? SORT_FNS.newest fallback that implied
-    // sortBy could be out-of-range while the type said otherwise.
     return result.sort(SORT_FNS[sortBy]);
   }, [files, search, activeType, sortBy]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Paginated slice ──────────────────────────────────────────────────────────
 
-  // const handleView = useCallback(
-  //   (file: FileItem) => { logAction(file.id, 'view'); navigate(`/files/${file.id}`); },
-  //   [logAction, navigate],
-  // );
-    const handleView = useCallback(
+  const paginated = useMemo<FileItem[]>(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize],
+  );
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+
+  const handleView = useCallback(
     (file: FileItem) => {
       logAction(file.id, 'view');
       navigate(`/catalog/${file.id}/subfolders`, {
@@ -239,7 +371,7 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
     }
   }, [deleteFile, showToast]);
 
-  // ── Loading ─────────────────────────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -252,7 +384,7 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
     );
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className={styles.wrapper}>
@@ -260,7 +392,6 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
       {/* ── Toolbar ── */}
       <div className={styles.toolbar}>
 
-        {/* Search */}
         <div className={styles.searchWrap}>
           <Search size={13} className={styles.searchIcon} aria-hidden="true" />
           <input
@@ -275,13 +406,10 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
 
         <div className={styles.spacer} />
 
-        {/* Count chip */}
         <span className={styles.countChip} aria-live="polite">
           {filtered.length} {filtered.length === 1 ? 'file' : 'files'}
         </span>
 
-        {/* View toggle */}
-        {/* Bug fix: added type="button" to prevent accidental form submission */}
         <div className={styles.toggleWrap} role="group" aria-label="View mode">
           {(['table', 'grid'] as ViewMode[]).map(mode => (
             <button
@@ -328,47 +456,64 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
 
       ) : viewMode === 'table' ? (
 
-        <div className={styles.tableOuter}>
-          <table className={styles.table} aria-label="File catalog">
-            <thead className={styles.thead}>
-              <tr>
-                {/* Bug fix: use header text as key instead of numeric index */}
-                {TABLE_HEADERS.map(h => (
-                  <th key={h} className={styles.th} scope="col">{h}</th>
+        <>
+          <div className={styles.tableOuter}>
+            <table className={styles.table} aria-label="File catalog">
+              <thead className={styles.thead}>
+                <tr>
+                  {TABLE_HEADERS.map(h => (
+                    <th key={h} className={styles.th} scope="col">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className={styles.tbody}>
+                {paginated.map(f => (
+                  <FileRow
+                    key={f.id}
+                    file={f}
+                    onView={handleView}
+                    onDelete={handleDelete}
+                    onDownload={handleDownload}
+                  />
                 ))}
-              </tr>
-            </thead>
-            <tbody className={styles.tbody}>
-              {filtered.map(f => (
-                <FileRow
-                  key={f.id}
-                  file={f}
-                  onView={handleView}
-                  onDelete={handleDelete}
-                  onDownload={handleDownload}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={filtered.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </>
 
       ) : (
 
-        // NOTE: The responsive grid column rule lives in index.css as .file-grid
-        // because Tailwind cannot generate `repeat(auto-fill, minmax(192px, 1fr))`
-        // from a static class name. Add this to your global stylesheet:
+        // NOTE: .file-grid must be in index.css:
         //   .file-grid { grid-template-columns: repeat(auto-fill, minmax(192px, 1fr)); }
-        <div className={styles.grid} aria-label="File grid">
-          {filtered.map(f => (
-            <FileCard
-              key={f.id}
-              file={f}
-              onView={handleView}
-              onDelete={handleDelete}
-              onDownload={handleDownload}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles.grid} aria-label="File grid">
+            {paginated.map(f => (
+              <FileCard
+                key={f.id}
+                file={f}
+                onView={handleView}
+                onDelete={handleDelete}
+                onDownload={handleDownload}
+              />
+            ))}
+          </div>
+
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={filtered.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </>
 
       )}
     </div>

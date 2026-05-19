@@ -3,43 +3,16 @@ import { format } from 'date-fns';
 import JSZip from 'jszip';
 import type { FolderRecord } from '../../types/folder';
 import type { FileRecord, Group } from '../../components/layout/ui/cons';
+import { EXT_COLOR,EXT_ICON, PALETTES } from '@/constant/fileIcons';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-const PALETTES = [
-  { tab: '#b45309', body: '#d97706' },
-  { tab: '#1d4ed8', body: '#3b82f6' },
-  { tab: '#047857', body: '#10b981' },
-  { tab: '#6d28d9', body: '#8b5cf6' },
-  { tab: '#b91c1c', body: '#ef4444' },
-  { tab: '#065f46', body: '#059669' },
-  { tab: '#0369a1', body: '#0ea5e9' },
-  { tab: '#9d174d', body: '#ec4899' },
-] as const;
+
 
 function getPalette(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return PALETTES[h % PALETTES.length];
-}
-
-// ── Tag colour ────────────────────────────────────────────────────────────────
-
-const TAG_COLORS = [
-  { bg: '#EEF2FF', text: '#4338CA', border: '#C7D2FE' },
-  { bg: '#F0FDF4', text: '#166534', border: '#BBF7D0' },
-  { bg: '#FFF7ED', text: '#9A3412', border: '#FED7AA' },
-  { bg: '#FDF4FF', text: '#7E22CE', border: '#E9D5FF' },
-  { bg: '#FFF1F2', text: '#9F1239', border: '#FECDD3' },
-  { bg: '#F0F9FF', text: '#0C4A6E', border: '#BAE6FD' },
-  { bg: '#FEFCE8', text: '#854D0E', border: '#FEF08A' },
-  { bg: '#F0FDFA', text: '#134E4A', border: '#99F6E4' },
-];
-
-function tagColor(tag: string) {
-  let h = 0;
-  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) >>> 0;
-  return TAG_COLORS[h % TAG_COLORS.length];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -52,22 +25,6 @@ function findFolder(nodes: FolderRecord[], id: string): FolderRecord | null {
   }
   return null;
 }
-
-const EXT_ICON: Record<string, string> = {
-  pdf: '📕', docx: '📝', doc: '📝', xlsx: '📊', xls: '📊',
-  pptx: '📽️', ppt: '📽️', zip: '🗜️', rar: '🗜️',
-  jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️',
-  mp4: '🎬', mov: '🎬', mp3: '🎵', wav: '🎵', other: '📄',
-};
-const EXT_COLOR: Record<string, string> = {
-  pdf: '#ef4444', docx: '#3b82f6', doc: '#3b82f6',
-  xlsx: '#22c55e', xls: '#22c55e', pptx: '#f97316', ppt: '#f97316',
-  zip: '#8b5cf6', rar: '#8b5cf6',
-  jpg: '#ec4899', jpeg: '#ec4899', png: '#ec4899', gif: '#ec4899',
-  webp: '#ec4899', svg: '#ec4899',
-  mp4: '#06b6d4', mov: '#06b6d4', mp3: '#f59e0b', wav: '#f59e0b',
-  other: '#94a3b8',
-};
 
 function extOf(file: FileRecord) { return (file.ext ?? 'other').toLowerCase(); }
 
@@ -84,13 +41,6 @@ function fmtBytes(bytes: number) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-// ── SVG Icons ─────────────────────────────────────────────────────────────────
-
-const IcoPlus = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-);
 const IcoUpload = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
@@ -127,22 +77,10 @@ const IcoMove = () => (
     <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
   </svg>
 );
-const IcoSearch = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-);
-const IcoFilter = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="4" y1="6" x2="20" y2="6"/>
-    <line x1="8" y1="12" x2="16" y2="12"/>
-    <line x1="11" y1="18" x2="13" y2="18"/>
-  </svg>
-);
-const IcoTag = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-    <line x1="7" y1="7" x2="7.01" y2="7"/>
+const IcoEye = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
   </svg>
 );
 const IcoExport = () => (
@@ -164,9 +102,97 @@ const toolbarBtn: React.CSSProperties = {
   padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
 };
 
-// ── Initials avatar helper ────────────────────────────────────────────────────
-function initials(name: string) {
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+// ── FilePreviewModal ──────────────────────────────────────────────────────────
+
+interface FilePreviewModalProps {
+  file: FileRecord;
+  onClose: () => void;
+}
+
+function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
+  const [url, setUrl]         = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+  const ext = (file.ext ?? '').toLowerCase();
+
+  const isImage  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+  const isPdf    = ext === 'pdf';
+  const isOffice = ['xlsx', 'xls', 'docx', 'doc', 'pptx', 'ppt'].includes(ext);
+
+  useState(() => {
+    (async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        if (isOffice) {
+          const { data, error: e } = await supabase.storage
+            .from('filevault')
+            .createSignedUrl(file.storage_path, 3600);
+          if (e || !data) throw new Error(e?.message ?? 'Failed to get signed URL');
+          setUrl(`https://docs.google.com/viewer?url=${encodeURIComponent(data.signedUrl)}&embedded=true`);
+        } else {
+          const { data, error: e } = await supabase.storage
+            .from('filevault')
+            .download(file.storage_path);
+          if (e || !data) throw new Error(e?.message ?? 'Failed to download file');
+          setUrl(URL.createObjectURL(data));
+        }
+      } catch (err) {
+        setError(String(err));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  });
+
+  function handleBackdrop(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  return (
+    <div onClick={handleBackdrop} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(4px)', padding: 24 }}>
+      <div style={{ background: '#fff', borderRadius: 16, width: '90vw', maxWidth: 1000, height: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, background: '#fafafa' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>{EXT_ICON[ext] ?? EXT_ICON.other}</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{file.name}</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{fmtBytes(file.size_bytes ?? 0)} · {ext.toUpperCase()}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', fontSize: 16, color: '#64748b', padding: '4px 8px', borderRadius: 6, lineHeight: 1 }}>✕</button>
+        </div>
+        <div style={{ flex: 1, overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, color: '#94a3b8' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#6366f1', animation: 'ftSpin 0.7s linear infinite' }} />
+              <span style={{ fontSize: 13 }}>Loading preview…</span>
+              <style>{`@keyframes ftSpin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+          {!loading && error && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#ef4444', marginBottom: 6 }}>Preview unavailable</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', maxWidth: 320 }}>{error}</div>
+            </div>
+          )}
+          {!loading && !error && url && isImage && (
+            <img src={url} alt={file.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8, padding: 16 }} />
+          )}
+          {!loading && !error && url && (isPdf || isOffice) && (
+            <iframe src={url} title={file.name} style={{ width: '100%', height: '100%', border: 'none' }} />
+          )}
+          {!loading && !error && url && !isImage && !isPdf && !isOffice && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <div style={{ fontSize: 52, marginBottom: 14 }}>{EXT_ICON[ext] ?? EXT_ICON.other}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#475569', marginBottom: 6 }}>No preview available</div>
+              <div style={{ fontSize: 12, color: '#94a3b8' }}>This file type cannot be previewed in the browser</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── ProjectDetailsPanel ───────────────────────────────────────────────────────
@@ -179,17 +205,13 @@ interface ProjectDetailsPanelProps {
   onRemoveFromFolder: (fileId: string) => void;
 }
 
-function ProjectDetailsPanel({
-  node, group, files, onMoveFile, onRemoveFromFolder,
-}: ProjectDetailsPanelProps) {
+function ProjectDetailsPanel({ node, group, files, onMoveFile, onRemoveFromFolder }: ProjectDetailsPanelProps) {
   const folderFiles = files.filter(f => f.folder_id === node.id);
 
   const totalSize = useMemo(
     () => folderFiles.reduce((sum, f) => sum + (f.size_bytes ?? 0), 0),
     [folderFiles],
   );
-
-  const tags: string[] = node.tags ?? [];
 
   const cell: React.CSSProperties = {
     padding: '9px 16px',
@@ -199,14 +221,8 @@ function ProjectDetailsPanel({
   };
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: 12,
-      width: '100%',
-      marginTop: 20,
-    }}>
-      {/* ── LEFT: Project / folder details ─────────────────────────────── */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%', marginTop: 20 }}>
+      {/* ── LEFT: Project details ── */}
       <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
         <div style={{ padding: '11px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#1e293b' }}>Project details</span>
@@ -223,45 +239,20 @@ function ProjectDetailsPanel({
               <td style={{ ...cell, color: '#1e293b' }}>{node.description ?? '—'}</td>
             </tr>
             <tr>
-              <td style={{ ...cell, color: '#94a3b8' }}>Cohort</td>
-              <td style={{ ...cell, color: '#1e293b' }}>{group.name}</td>
-            </tr>
-            <tr>
-              <td style={{ ...cell, color: '#94a3b8' }}>Tags</td>
-              <td style={{ ...cell }}>
-                {tags.length === 0 ? (
-                  <span style={{ color: '#94a3b8' }}>—</span>
-                ) : (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {tags.map(tag => {
-                      const c = tagColor(tag);
-                      return (
-                        <span key={tag} style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>
-                          {tag}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </td>
-            </tr>
-            <tr>
-              <td style={{ ...cell, borderBottom: 'none', color: '#94a3b8' }}>Created</td>
-              <td style={{ ...cell, borderBottom: 'none', color: '#1e293b' }}>{fmtDate(node.created_at)}</td>
+              <td style={{ ...cell, borderBottom: 'none', color: '#94a3b8' }}>Cohort</td>
+              <td style={{ ...cell, borderBottom: 'none', color: '#1e293b' }}>{group.name}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* ── RIGHT: Files table ──────────────────────────────────────────── */}
+      {/* ── RIGHT: Files table ── */}
       <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
         <div style={{ padding: '11px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#1e293b' }}>Files</span>
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>
-            {folderFiles.length} file{folderFiles.length !== 1 ? 's' : ''} · {fmtBytes(totalSize)}
-          </span>
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>{folderFiles.length} file{folderFiles.length !== 1 ? 's' : ''} · {fmtBytes(totalSize)}</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 60px 76px', gap: 8, padding: '8px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 60px 100px', gap: 8, padding: '8px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           <span>Name</span>
           <span style={{ textAlign: 'right' }}>Size</span>
           <span style={{ textAlign: 'center' }}>Type</span>
@@ -293,91 +284,70 @@ interface FileRowHorizontalProps {
 }
 
 function FileRowHorizontal({ file, ext, color, icon, isLast, onMove, onDelete }: FileRowHorizontalProps) {
-  const [hov, setHov] = useState(false);
+  const [hov, setHov]               = useState(false);
+  const [previewing, setPreviewing] = useState(false);
 
-  function handleDownload() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-    const bucket      = 'files';
-    const path        = file.group_id ? `${file.group_id}/${file.name}` : file.name;
-    const url         = `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+  async function handleDownload() {
+    if (!file.storage_path) return;
+    const { supabase } = await import('../../lib/supabase');
+    const { data, error } = await supabase.storage.from('filevault').download(file.storage_path);
+    if (error || !data) { console.error('Download failed', error); return; }
+    const url = URL.createObjectURL(data);
     const a = document.createElement('a');
-    a.href = url; a.download = file.name; a.target = '_blank';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    a.href = url; a.download = file.name;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   return (
-    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ display: 'grid', gridTemplateColumns: '1fr 70px 60px 76px', alignItems: 'center', padding: '9px 14px', borderBottom: isLast ? 'none' : '1px solid #f1f5f9', background: hov ? '#f8fafc' : '#fff', transition: 'background 0.1s', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, overflow: 'hidden' }}>
-        <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
-        <span style={{ fontSize: 13, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+    <>
+      {previewing && <FilePreviewModal file={file} onClose={() => setPreviewing(false)} />}
+      <div
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        style={{ display: 'grid', gridTemplateColumns: '1fr 70px 60px 100px', alignItems: 'center', padding: '9px 14px', borderBottom: isLast ? 'none' : '1px solid #f1f5f9', background: hov ? '#f8fafc' : '#fff', transition: 'background 0.1s', gap: 8 }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, overflow: 'hidden' }}>
+          <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+          <span onClick={() => setPreviewing(true)} title="Click to preview" style={{ fontSize: 13, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: hov ? 'underline' : 'none', textUnderlineOffset: 2 }}>
+            {file.name}
+          </span>
+        </div>
+        <span style={{ fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>{file.sizeFormatted ?? fmtBytes(file.size_bytes ?? 0)}</span>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#fff', background: color, borderRadius: 4, padding: '2px 6px', textTransform: 'uppercase' }}>{ext}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, opacity: hov ? 1 : 0, transition: 'opacity 0.15s' }}>
+          <button title="Preview" onClick={() => setPreviewing(true)} style={{ ...iconBtn, background: '#f0fdf4', color: '#166834' }}><IcoEye /></button>
+          <button title="Download" onClick={() => { void handleDownload(); }} style={{ ...iconBtn, background: '#dbeafe', color: '#1d4ed8' }}><IcoDownload /></button>
+          <button title="Move" onClick={() => onMove(file)} style={{ ...iconBtn, background: '#ede9fe', color: '#5b21b6' }}><IcoMove /></button>
+          <button title="Remove from folder" onClick={() => onDelete(file.id)} style={{ ...iconBtn, background: '#fee2e2', color: '#991b1b' }}><IcoTrash /></button>
+        </div>
       </div>
-      <span style={{ fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>{file.sizeFormatted ?? fmtBytes(file.size_bytes ?? 0)}</span>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#fff', background: color, borderRadius: 4, padding: '2px 6px', textTransform: 'uppercase' }}>{ext}</span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, opacity: hov ? 1 : 0, transition: 'opacity 0.15s' }}>
-        <button title="Download" onClick={handleDownload} style={{ ...iconBtn, background: '#dbeafe', color: '#1d4ed8' }}><IcoDownload /></button>
-        <button title="Move" onClick={() => onMove(file)} style={{ ...iconBtn, background: '#ede9fe', color: '#5b21b6' }}><IcoMove /></button>
-        <button title="Remove from folder" onClick={() => onDelete(file.id)} style={{ ...iconBtn, background: '#fee2e2', color: '#991b1b' }}><IcoTrash /></button>
-      </div>
-    </div>
+    </>
   );
 }
 
-// ── Filter Bar — All + subproject name pills + Filter + Search ────────────────
+// ── Filter Bar ────────────────────────────────────────────────────────────────
 
 function TagFilterBar({ roots, activeFolderId, onSelect, onClear }: {
-  roots:          FolderRecord[];
-  activeFolderId: string | null;
-  onSelect:       (id: string) => void;
-  onClear:        () => void;
+  roots: FolderRecord[]; activeFolderId: string | null;
+  onSelect: (id: string) => void; onClear: () => void;
 }) {
-
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-
-      {/* Left: All + one pill per subproject */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, flexWrap: 'wrap' }}>
-        {/* All pill */}
-        <button
-          onClick={onClear}
-          style={{
-            height: 38, padding: '0 18px', borderRadius: 999,
-            border: `1.5px solid ${activeFolderId === null ? 'transparent' : '#e2e8f0'}`,
-            background: activeFolderId === null ? '#6366f1' : '#fff',
-            color:      activeFolderId === null ? '#fff'    : '#64748b',
-            fontSize: 14, fontWeight: activeFolderId === null ? 500 : 400,
-            cursor: 'pointer', whiteSpace: 'nowrap' as const, transition: 'all 0.15s',
-          }}
-        >
+        <button onClick={onClear} style={{ height: 38, padding: '0 18px', borderRadius: 999, border: `1.5px solid ${activeFolderId === null ? 'transparent' : '#e2e8f0'}`, background: activeFolderId === null ? '#6366f1' : '#fff', color: activeFolderId === null ? '#fff' : '#64748b', fontSize: 14, fontWeight: activeFolderId === null ? 500 : 400, cursor: 'pointer', whiteSpace: 'nowrap' as const, transition: 'all 0.15s' }}>
           All
         </button>
-
-        {/* One pill per root folder */}
         {roots.map(node => {
           const isActive = activeFolderId === node.id;
           return (
-            <button
-              key={node.id}
-              onClick={() => onSelect(node.id)}
-              style={{
-                height: 38, padding: '0 18px', borderRadius: 999,
-                border: `1.5px solid ${isActive ? 'transparent' : '#e2e8f0'}`,
-                background: isActive ? '#6366f1' : '#fff',
-                color:      isActive ? '#fff'    : '#64748b',
-                fontSize: 14, fontWeight: isActive ? 500 : 400,
-                cursor: 'pointer', whiteSpace: 'nowrap' as const, transition: 'all 0.15s',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
+            <button key={node.id} onClick={() => onSelect(node.id)} style={{ height: 38, padding: '0 18px', borderRadius: 999, border: `1.5px solid ${isActive ? 'transparent' : '#e2e8f0'}`, background: isActive ? '#6366f1' : '#fff', color: isActive ? '#fff' : '#64748b', fontSize: 14, fontWeight: isActive ? 500 : 400, cursor: 'pointer', whiteSpace: 'nowrap' as const, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
               {node.icon && <span style={{ fontSize: 14 }}>{node.icon}</span>}
               {node.name}
-              {(node.file_count ?? 0) > 0 && (
-                <span style={{ fontSize: 11, opacity: isActive ? 0.7 : 0.5 }}>
-                  {node.file_count}
-                </span>
-              )}
+              {(node.file_count ?? 0) > 0 && <span style={{ fontSize: 11, opacity: isActive ? 0.7 : 0.5 }}>{node.file_count}</span>}
             </button>
           );
         })}
@@ -394,12 +364,11 @@ function FolderTile({ node, fileCount, onOpen, onRename, onDelete, onUpload }: {
   onDelete: (id: string) => Promise<void>;
   onUpload: (id: string, files: FileList) => void;
 }) {
-  const [hov, setHov] = useState(false);
-  const [renaming, setRenaming] = useState(false);
+  const [hov, setHov]             = useState(false);
+  const [renaming, setRenaming]   = useState(false);
   const [renameVal, setRenameVal] = useState(node.name);
   const fileRef = useRef<HTMLInputElement>(null);
   const { tab, body } = getPalette(node.id);
-  const tags: string[] = node.tags ?? [];
 
   async function commitRename() {
     const v = renameVal.trim();
@@ -439,70 +408,7 @@ function FolderTile({ node, fileCount, onOpen, onRename, onDelete, onUpload }: {
       ) : (
         <span onClick={onOpen} style={{ fontSize: 11, fontWeight: 500, color: '#334155', textAlign: 'center', width: 88, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{node.name}</span>
       )}
-      {tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center', width: 96 }}>
-          {tags.slice(0, 2).map(tag => { const c = tagColor(tag); return <span key={tag} style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 8, background: c.bg, color: c.text, border: `1px solid ${c.border}`, whiteSpace: 'nowrap' }}>{tag}</span>; })}
-          {tags.length > 2 && <span style={{ fontSize: 9, color: '#94a3b8' }}>+{tags.length - 2}</span>}
-        </div>
-      )}
       <input ref={fileRef} type="file" multiple style={{ display: 'none' }} onChange={e => { if (e.target.files?.length) { onUpload(node.id, e.target.files); e.target.value = ''; } }} />
-    </div>
-  );
-}
-
-// ── FileRow ───────────────────────────────────────────────────────────────────
-
-function FileRow({ file, ext, color, icon, isLast, onMove, onDelete }: {
-  file: FileRecord; ext: string; color: string; icon: string; isLast: boolean;
-  onMove: (f: FileRecord) => void; onDelete: (fileId: string) => void;
-}) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ display: 'grid', gridTemplateColumns: '32px 1fr 90px 90px 80px', alignItems: 'center', padding: '10px 16px', borderBottom: isLast ? 'none' : '1px solid #f1f5f9', background: hov ? '#f8fafc' : '#fff', transition: 'background 0.1s', gap: 8 }}>
-      <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
-      <span style={{ fontSize: 13, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
-      <span style={{ fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>{file.sizeFormatted ?? '—'}</span>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#fff', background: color, borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase' }}>{ext}</span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, opacity: hov ? 1 : 0, transition: 'opacity 0.15s' }}>
-        <button title="Move" onClick={() => onMove(file)} style={{ ...iconBtn, background: '#ede9fe', color: '#5b21b6' }}><IcoMove /></button>
-        <button title="Remove" onClick={() => onDelete(file.id)} style={{ ...iconBtn, background: '#fee2e2', color: '#991b1b' }}><IcoTrash /></button>
-      </div>
-    </div>
-  );
-}
-
-// ── NewFolderTile ─────────────────────────────────────────────────────────────
-
-function NewFolderTile({ onConfirm, onCancel, loading }: {
-  onConfirm: (name: string, icon: string) => Promise<void>;
-  onCancel: () => void; loading?: boolean;
-}) {
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState('📁');
-  const ICONS = ['📁','📂','📊','🗂️','🗃️','📋','📌','🏷️'];
-  async function commit() { const v = name.trim(); if (!v) { onCancel(); return; } await onConfirm(v, icon); }
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: 96 }}>
-      <div style={{ position: 'relative', width: 80, height: 64 }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, width: 34, height: 12, borderRadius: '4px 4px 0 0', background: '#cbd5e1', border: '1.5px dashed #94a3b8' }} />
-        <div style={{ position: 'absolute', top: 9, left: 0, width: 80, height: 55, borderRadius: '2px 7px 7px 7px', background: '#f1f5f9', border: '1.5px dashed #94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 18 }}>{icon}</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', width: 100 }}>
-        {ICONS.map(ic => <button key={ic} onClick={() => setIcon(ic)} style={{ fontSize: 12, padding: '1px 3px', borderRadius: 3, cursor: 'pointer', border: ic === icon ? '1.5px solid #6366f1' : '1.5px solid transparent', background: ic === icon ? '#ede9fe' : 'transparent' }}>{ic}</button>)}
-      </div>
-      <input autoFocus style={{ width: 88, fontSize: 11, textAlign: 'center', padding: '2px 4px', borderRadius: 4, border: '1.5px solid #6366f1', outline: 'none', background: '#fff', color: '#1e293b' }}
-        value={name} onChange={e => setName(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') onCancel(); }}
-        onClick={e => e.stopPropagation()} onFocus={e => e.target.select()} placeholder="Folder name…" />
-      <div style={{ display: 'flex', gap: 4 }}>
-        <button onClick={commit} disabled={loading} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, border: 'none', background: '#6366f1', color: '#fff', cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>{loading ? '…' : 'Create'}</button>
-        <button onClick={onCancel} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', cursor: 'pointer' }}>Cancel</button>
-      </div>
     </div>
   );
 }
@@ -554,7 +460,12 @@ function ExportModal({ node, files, onClose }: ExportModalProps) {
   const rows = files;
 
   function toggleField(key: FieldKey) {
-    setActiveFields(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next; });
+    setActiveFields(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   function getVal(f: FileRecord, key: FieldKey): string {
@@ -591,15 +502,18 @@ function ExportModal({ node, files, onClose }: ExportModalProps) {
     setZipping(true); setZipStatus('Preparing…');
     try {
       const zip = new JSZip();
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const bucket = 'files';
+      const { supabase } = await import('../../lib/supabase');
       for (let i = 0; i < rows.length; i++) {
         const f = rows[i];
-        const path = f.group_id ? `${f.group_id}/${f.name}` : f.name;
-        const url  = `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
         setZipStatus(`Fetching ${i + 1} / ${rows.length}: ${f.name}`);
-        try { const res = await fetch(url); if (!res.ok) throw new Error(`HTTP ${res.status}`); zip.file(f.name, await res.blob()); }
-        catch { zip.file(`${f.name}.error.txt`, `Could not fetch: ${url}`); }
+        try {
+          if (!f.storage_path) throw new Error('No storage path');
+          const { data, error } = await supabase.storage.from('filevault').download(f.storage_path);
+          if (error || !data) throw new Error(error?.message ?? 'Download failed');
+          zip.file(f.name, data);
+        } catch (e) {
+          zip.file(`${f.name}.error.txt`, `Could not fetch: ${String(e)}`);
+        }
       }
       zip.file('_manifest.csv', csvContent);
       setZipStatus('Compressing…');
@@ -729,7 +643,7 @@ interface FolderViewProps {
 
 // ── FolderView ────────────────────────────────────────────────────────────────
 
-function FolderView({ node, group, files, stack, roots, onOpenFolder, onJump, onAddSubFolder, onRename, onDelete, onUploadToFolder, onMoveFile, onRemoveFromFolder, onExport }: FolderViewProps) {
+function FolderView({ node, group, files, stack, roots, onOpenFolder, onJump, onRename, onDelete, onUploadToFolder, onMoveFile, onRemoveFromFolder }: FolderViewProps) {
   const uploadRef = useRef<HTMLInputElement>(null);
   const [showExport, setShowExport] = useState(false);
   const folderFiles = files.filter(f => f.folder_id === node.id);
@@ -778,7 +692,7 @@ export interface FolderTreeProps {
 
 export default function FolderTree({
   group, roots, files, loading,
-  onCreateFolder, onAddSubFolder, onRename, onDelete,
+  onAddSubFolder, onRename, onDelete,
   onUploadToFolder, onMoveFile, onRemoveFromFolder, onExport,
 }: FolderTreeProps) {
   const [folderStack,    setFolderStack]    = useState<string[]>([]);
@@ -790,9 +704,7 @@ export default function FolderTree({
   const openFolder   = openFolderId ? findFolder(roots, openFolderId) : null;
 
   const filteredRoots = useMemo(() => {
-    let result = activeFolderId
-      ? roots.filter(n => n.id === activeFolderId)
-      : roots;
+    let result = activeFolderId ? roots.filter(n => n.id === activeFolderId) : roots;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter(n => n.name.toLowerCase().includes(q));

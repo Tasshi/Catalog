@@ -133,6 +133,7 @@ function GroupDetailInner({ group }: GroupDetailProps) {
         onUploadToFolder={handleUploadToFolder}
         onMoveFile={setMovingFile}
         onRemoveFromFolder={handleRemoveFromFolder}
+        onExport={() => {}}
       />
 
       {movingFile && (

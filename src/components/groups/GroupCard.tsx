@@ -1,4 +1,5 @@
 import type { Group } from '../layout/ui/cons';
+import { PALETTES } from '@/constant/fileIcons';
 
 interface GroupCardProps {
   group:   Group;
@@ -6,15 +7,6 @@ interface GroupCardProps {
 }
 
 // ── Palette — hashed from group.id so each group keeps a consistent color ─────
-
-const PALETTES = [
-  { tab: '#1a5276', body: '#2471a3' }, // blue
-  { tab: '#1e8449', body: '#27ae60' }, // green
-  { tab: '#7d6608', body: '#d4ac0d' }, // amber
-  { tab: '#6e2f8a', body: '#9b59b6' }, // purple
-  { tab: '#922b21', body: '#e74c3c' }, // red
-  { tab: '#0e6655', body: '#1abc9c' }, // teal
-] as const;
 
 function getPalette(id: string) {
   let h = 0;
