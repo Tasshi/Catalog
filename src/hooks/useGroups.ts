@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { Group, GroupMember, SubGroup } from '../components/ui/cons';
+import type { Group, GroupMember, SubGroup } from '../components/layout/ui/cons';
 
 type GroupInsert = {
   name: string;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Button, Avatar } from '../ui';
+import { Modal, Button, Avatar } from '../layout/ui';
 import { useGroupMembers } from '../../hooks/useGroups';
 import { useApp } from '../../contexts/AppContext';
 import { Trash2 } from 'lucide-react';

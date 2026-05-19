@@ -335,7 +335,7 @@
 //   );
 // }
 import { useState } from 'react';
-import { Modal, Button } from '../ui';
+import { Modal, Button } from '../layout/ui';
 import { useGroups } from '../../hooks/useGroups';
 import { useApp } from '../../contexts/AppContext';
 import { supabase } from '../../lib/supabase';

@@ -1,9 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/layout/ui/button';
+import { Input } from '@/components/layout/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/layout/ui/card';
 import {
   Form,
   FormControl,
@@ -11,7 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@/components/layout/ui/form';
 import { useSignInWithPassword } from '@/features/auth/api/use-sign-in-with-password';
 import { useSignInWithGoogle } from '@/features/auth/api/use-sign-in-with-google';
 import { signInSchema, type SignInValues } from '@/features/auth/schemas/sign-in-schema';

@@ -1,6 +1,6 @@
 import { PostList } from '@/features/posts/components/post-list';
 import { PostForm } from '@/features/posts/components/post-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/layout/ui/card';
 
 export const PostsListPage = () => {
   return (

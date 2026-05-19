@@ -4,7 +4,7 @@ import { useFiles } from '../../hooks/useFiles';
 import { useApp } from '../../contexts/AppContext';
 import { downloadFile } from '../../lib/storage';
 import { FileRow, FileCard } from './FileCard';
-import { type FileItem } from '../ui/cons';
+import { type FileItem } from '../layout/ui/cons';
 import FilterPanel from './FilterPanel';
 import { LayoutGrid, List, FileX, Search } from 'lucide-react';
 
@@ -205,8 +205,17 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleView = useCallback(
-    (file: FileItem) => { logAction(file.id, 'view'); navigate(`/files/${file.id}`); },
+  // const handleView = useCallback(
+  //   (file: FileItem) => { logAction(file.id, 'view'); navigate(`/files/${file.id}`); },
+  //   [logAction, navigate],
+  // );
+    const handleView = useCallback(
+    (file: FileItem) => {
+      logAction(file.id, 'view');
+      navigate(`/catalog/${file.id}/subfolders`, {
+        state: { fileId: file.id, groupId: file.group_id },
+      });
+    },
     [logAction, navigate],
   );
 

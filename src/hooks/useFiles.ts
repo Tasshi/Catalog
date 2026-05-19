@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatBytes } from '../lib/storage';
 import { getFileExtension } from '../lib/metadata';
-import type { FileRecord } from '../components/ui/cons';
+import type { FileRecord } from '../components/layout/ui/cons';
 
 export function useFiles(groupId: string | null = null) {
   const { user } = useAuth();

@@ -5,13 +5,13 @@ import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import AuditLog from '../components/filedetail/AuditLog';
 import VersionHistory from '../components/filedetail/VersionHistory';
-import { Button } from '../components/ui';
+import { Button } from '../components/layout/ui';
 import { getFileConfig, getFileExtension } from '../lib/metadata';
 import { downloadFile, formatBytes } from '../lib/storage';
 import { useApp } from '../contexts/AppContext';
 import { format } from 'date-fns';
 import { Download, Eye, Edit3, X, Users, Mail, Phone, Loader2, Save, Tag } from 'lucide-react';
-import type { FileDetail } from '@/components/ui/cons';
+import type { FileDetail } from '@/components/layout/ui/cons';
 import { useGroupMembers, useGroups } from '../hooks/useGroups';
 
 // ── Avatar colours ────────────────────────────────────────────────────────────
@@ -153,22 +153,20 @@ function GroupAccessPanel({ groupId, groupName, groupIcon }: {
 
 // ── PreviewModal ──────────────────────────────────────────────────────────────
 
+// FIX 1: Removed useEffect + useState for url/error.
+// getPublicUrl is synchronous — it just builds a URL string, no I/O.
+// Calling setState inside an effect body for synchronous values causes
+// cascading renders. Derive the values directly instead.
 function PreviewModal({ file, onClose }: { file: FileDetail; onClose: () => void }) {
-  const [url,   setUrl]   = useState<string | null>(null);
-  const [error, setError] = useState(false);
   const ext = getFileExtension(file.name).toLowerCase();
 
   const isImage   = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext);
   const isPdf     = ext === 'pdf';
   const isPreview = isImage || isPdf;
 
-  useEffect(() => {
-    const { data } = supabase.storage
-      .from('files')
-      .getPublicUrl(file.storage_path);
-    if (data?.publicUrl) setUrl(data.publicUrl);
-    else setError(true);
-  }, [file.storage_path]);
+  const { data } = supabase.storage.from('files').getPublicUrl(file.storage_path);
+  const url   = data?.publicUrl ?? null;
+  const error = !url;
 
   return (
     <div
@@ -206,12 +204,7 @@ function PreviewModal({ file, onClose }: { file: FileDetail; onClose: () => void
         </div>
 
         <div className="flex-1 overflow-auto flex items-center justify-center p-4" style={{ minHeight: '300px' }}>
-          {!url && !error ? (
-            <div className="flex items-center gap-2" style={{ color: 'var(--text3)' }}>
-              <Loader2 size={18} className="animate-spin" />
-              <span className="text-sm">Loading preview…</span>
-            </div>
-          ) : error || !isPreview ? (
+          {error || !isPreview ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <div
                 className="w-16 h-20 rounded-lg flex items-center justify-center font-mono text-sm font-medium"
@@ -634,7 +627,8 @@ export default function FileDetail() {
               <div className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text3)' }}>
                 Version History
               </div>
-              <VersionHistory fileId={id || ''} currentVersion={file.version} />
+              {/* FIX 2: file.version is number | undefined; ?? 1 provides the required number fallback */}
+              <VersionHistory fileId={id || ''} currentVersion={file.version ?? 1} />
             </div>
 
             <div className="card">

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/layout/ui/button';
+import { Input } from '@/components/layout/ui/input';
 import {
   Form,
   FormControl,
@@ -9,7 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '@/components/layout/ui/form';
 import { useCreatePost } from '../api/use-create-post';
 import { createPostSchema, type CreatePostValues } from '../schemas/post-schema';
 

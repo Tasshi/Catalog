@@ -3,12 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../hooks/useGroups';
 import { usePermissions } from '../../hooks/Usepermissions';
-import { Avatar } from '../ui';
+import { Avatar } from './ui';
 
 import {
   LayoutDashboard, Upload, Users, FolderOpen, LogOut, Settings, ChevronDown, KeyRound,
 } from 'lucide-react';
-import type { Group } from '../ui/cons';
+import type { Group } from './ui/cons';
 
 function groupColor(str: string) {
   const palette = ['#5B8DEF', '#4CAF7D', '#F5C842', '#E07B54', '#A78BFA', '#F472B6', '#34D399'];
@@ -48,7 +48,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
   const mainNav = [
     { label: 'Dashboard',  icon: LayoutDashboard, path: '/',        adminOnly: true  },
     { label: 'My Catalog', icon: FolderOpen,       path: '/catalog', adminOnly: false },
-    { label: 'Upload',     icon: Upload,            path: '/upload',  adminOnly: false },
+    { label: 'Creat Project',     icon: Upload,            path: '/upload',  adminOnly: false },
   ] as const;
 
   const visibleMainNav = mainNav.filter(item => !item.adminOnly || perms.isAdmin);

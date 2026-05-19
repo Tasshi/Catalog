@@ -1,7 +1,7 @@
 import Sidebar from './Sidebar';
 import { useApp } from '../../contexts/AppContext';
-import { Toast } from '../ui';
-import type { Group } from '../ui/cons';
+import { Toast } from './ui';
+import type { Group } from './ui/cons';
 
 interface LayoutProps {
   children: React.ReactNode;

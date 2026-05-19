@@ -1,4 +1,4 @@
-import { SearchBar, Button } from '../ui';
+import { SearchBar, Button } from './ui';
 import { useNavigate } from 'react-router-dom';
 import { Upload } from 'lucide-react';
 
@@ -17,7 +17,8 @@ export default function Header({ title, search, onSearch, actions }: HeaderProps
         {title}
       </h1>
 
-      {onSearch && <SearchBar value={search} onChange={onSearch} />}
+      {/* {onSearch && <SearchBar value={search} onChange={onSearch} />} */}
+      {onSearch && <SearchBar value={search ?? ''} onChange={onSearch} />}
 
       {actions}
 

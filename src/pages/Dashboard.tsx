@@ -206,67 +206,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* ── Middle row ──────────────────────────────────────────────────── */}
-        <div className="flex gap-5 mb-6">
-
-          {/* Quick actions */}
-          <div className="flex-shrink-0" style={{ width: 200 }}>
-            <div className="text-[11px] uppercase tracking-wider text-[#64748D] font-medium mb-2 px-0.5">
-              Quick actions
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <QuickAction icon={<Upload size={16} strokeWidth={1.5} />}    label="Upload"   onClick={() => navigate('/upload')}   />
-              <QuickAction icon={<FolderOpen size={16} strokeWidth={1.5} />} label="Catalog"  onClick={() => navigate('/catalog')}  />
-              <QuickAction icon={<Users size={16} strokeWidth={1.5} />}     label="Groups"   onClick={() => navigate('/groups')}   />
-              <QuickAction icon={<Share2 size={16} strokeWidth={1.5} />}    label="Shared"   onClick={() => navigate('/catalog')}  />
-            </div>
-          </div>
-
-          {/* Storage + groups */}
-          <div className="flex flex-col gap-4 flex-1">
-            <StorageBar usedMB={totalMB} />
-
-            <div className="bg-white border border-[#D4DEE9] rounded-lg p-5 shadow-[0px_1px_2px_rgba(0,0,0,0.04)] flex-1">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] uppercase tracking-wider text-[#64748D] font-medium">
-                  My groups
-                </span>
-                <button
-                  className="text-[12px] text-sky-600 hover:text-sky-700 transition-colors"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                  onClick={() => navigate('/groups')}
-                >
-                  Manage →
-                </button>
-              </div>
-
-              {groups.length === 0 ? (
-                <p className="text-[13px] text-[#64748D]">
-                  No groups yet.{' '}
-                  <button
-                    className="text-sky-600 underline"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                    onClick={() => navigate('/groups')}
-                  >
-                    Create one
-                  </button>
-                </p>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {groups.slice(0, 4).map((g: any) => (
-                    <GroupPill
-                      key={g.id}
-                      group={g}
-                      fileCount={files.filter((f) => f.group_id === g.id).length}
-                      onClick={() => navigate('/groups')}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* ── Recent files ─────────────────────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-3">

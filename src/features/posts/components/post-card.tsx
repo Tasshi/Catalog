@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/layout/ui/card';
 import type { Post } from '../types';
 
 type PostCardProps = {

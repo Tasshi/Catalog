@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/layout/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/layout/ui/card';
 import { usePost } from '@/features/posts/api/use-post';
 
 export const PostDetailPage = () => {

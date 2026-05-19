@@ -4,8 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../contexts/AppContext';
-import { Button, FormField } from '../components/ui';
-import { Avatar } from '../components/ui';
+import { Button, FormField } from '../components/layout/ui';
+import { Avatar } from '../components/layout/ui';
 
 export default function Settings() {
   const { profile, user } = useAuth();

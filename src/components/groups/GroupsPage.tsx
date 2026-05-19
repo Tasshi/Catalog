@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Sidebar from '../layout/Sidebar';
 import GroupList from '../groups/GroupList';
-import type { Group } from '../ui/cons';
+import type { Group } from '../layout/ui/cons';
 
 export default function GroupsPage() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);

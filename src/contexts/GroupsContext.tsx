@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import { useGroups as useGroupsHook } from '../hooks/useGroups';
-import type { Group } from '../components/ui/cons';
+import type { Group } from '../components/layout/ui/cons';
 
 interface GroupsContextType {
   groups: Group[];

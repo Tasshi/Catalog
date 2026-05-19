@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Button } from '../ui';
+import { Button } from '../layout/ui';
 import { format } from 'date-fns';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

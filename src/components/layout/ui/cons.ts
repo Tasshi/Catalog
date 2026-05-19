@@ -100,6 +100,7 @@ export interface FileItem {
   groupIcon?: string;
   authorName?: string;
   size_bytes?: string;
+  group_id?: string | null;
 }
 
 export type IconSize = 'sm' | 'md' | 'lg';
@@ -178,4 +179,20 @@ export interface UploadPayload {
   groupId:     string | null;
   subGroupId:  string | null;
   folderId:    string | null;
+}
+export interface FileRecord {
+  id: string;
+  name: string;
+  size_bytes: number;
+  is_deleted: boolean;
+  created_at: string;
+  group_id: string | null;
+  folder_id: string | null;
+  uploaded_by: string;
+  ext: string;
+  sizeFormatted: string;
+  authorName: string;
+  groupName: string | null;
+  groupIcon: string | null;
+  storage_path: string;       // ← ADD THIS LINE — e.g. "group_id/timestamp_filename"
 }

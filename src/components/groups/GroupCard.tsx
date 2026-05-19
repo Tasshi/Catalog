@@ -1,4 +1,4 @@
-import type { Group } from '../ui/cons';
+import type { Group } from '../layout/ui/cons';
 
 interface GroupCardProps {
   group:   Group;

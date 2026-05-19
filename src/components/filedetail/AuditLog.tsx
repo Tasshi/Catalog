@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Avatar } from '../ui';
+import { Avatar } from '../layout/ui';
 import { format } from 'date-fns';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
