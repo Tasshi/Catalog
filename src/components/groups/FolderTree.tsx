@@ -1367,6 +1367,7 @@ interface TeamMember {
   email:     string | null;
   avatar_url: string | null;
 }
+// REPLACE the entire useTeamMembers function in FolderTree.tsx with this:
 
 function useTeamMembers(groupId: string) {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -1380,15 +1381,20 @@ function useTeamMembers(groupId: string) {
       const { data: memberRows } = await supabase
         .from('group_members')
         .select('id, user_id, role')
-        .eq('group_id', groupId);
+        .eq('group_id', groupId) as {
+          data: { id: string; user_id: string; role: string }[] | null;
+        };
 
       if (cancelled || !memberRows?.length) { setLoading(false); return; }
 
       const userIds = memberRows.map(m => m.user_id);
+
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, full_name, email, avatar_url')
-        .in('id', userIds);
+        .in('id', userIds) as {
+          data: { id: string; full_name: string | null; email: string | null; avatar_url: string | null }[] | null;
+        };
 
       if (cancelled) return;
 
@@ -1414,6 +1420,53 @@ function useTeamMembers(groupId: string) {
 
   return { members, loading };
 }
+
+// function useTeamMembers(groupId: string) {
+//   const [members, setMembers] = useState<TeamMember[]>([]);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     let cancelled = false;
+//     setLoading(true);
+
+//     async function load() {
+//       const { data: memberRows } = await supabase
+//         .from('group_members')
+//         .select('id, user_id, role')
+//         .eq('group_id', groupId);
+
+//       if (cancelled || !memberRows?.length) { setLoading(false); return; }
+
+//       const userIds = memberRows.map(m => m.user_id);
+//       const { data: profiles } = await supabase
+//         .from('profiles')
+//         .select('id, full_name, email, avatar_url')
+//         .in('id', userIds);
+
+//       if (cancelled) return;
+
+//       const merged: TeamMember[] = memberRows.map(m => {
+//         const p = profiles?.find(p => p.id === m.user_id);
+//         return {
+//           id:         m.id,
+//           user_id:    m.user_id,
+//           role:       m.role,
+//           full_name:  p?.full_name  ?? null,
+//           email:      p?.email      ?? null,
+//           avatar_url: p?.avatar_url ?? null,
+//         };
+//       });
+
+//       setMembers(merged);
+//       setLoading(false);
+//     }
+
+//     void load();
+//     return () => { cancelled = true; };
+//   }, [groupId]);
+
+//   return { members, loading };
+// }
 
 function MemberAvatar({ name, avatarUrl }: { name: string | null; avatarUrl: string | null }) {
   const initials = (name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
