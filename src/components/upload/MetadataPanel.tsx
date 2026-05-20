@@ -3,10 +3,12 @@ import { FormField, Button } from '../layout/ui';
 import {
   ChevronDown, FolderOpen, Check,
   UserPlus, Trash2, Phone, Mail, Users, Loader2, Layers, Clock,
+  UploadCloud, X, FileText, ShieldAlert,
 } from 'lucide-react';
-import { useGroups, useGroupMembers, useSubGroups } from '../../hooks/useGroups';
+import { useGroups, useGroupMembers, useSubGroups, useUserGroupIds } from '../../hooks/useGroups';
 import { supabase } from '../../lib/supabase';
 import type { Group, GroupMember, SubGroup } from '../layout/ui/cons';
+
 
 const ACCENT = '#533AFD';
 
@@ -17,6 +19,7 @@ const db = supabase as any;
 
 interface MetadataPanelProps {
   files:             File[];
+  onFilesSelected:   (files: File[]) => void;
   onSubmit:          (meta: {
     projectName: string;
     description: string;
@@ -42,6 +45,12 @@ interface Invitation {
 
 function initials(name: string) {
   return (name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 // ── Member Form ────────────────────────────────────────────────────────────
@@ -409,10 +418,113 @@ function MembersSection({ groupId }: { groupId: string }) {
   );
 }
 
+// ── File Picker ────────────────────────────────────────────────────────────
+
+function FilePicker({ files, onFilesSelected, disabled }: {
+  files: File[];
+  onFilesSelected: (files: File[]) => void;
+  disabled?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      onFilesSelected(Array.from(e.target.files));
+    }
+    e.target.value = '';
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(false);
+    if (disabled) return;
+    const dropped = Array.from(e.dataTransfer.files);
+    if (dropped.length > 0) onFilesSelected([...files, ...dropped]);
+  }
+
+  function removeFile(index: number) {
+    onFilesSelected(files.filter((_, i) => i !== index));
+  }
+
+  return (
+    <div>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={disabled}
+      />
+
+      {files.length === 0 && (
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => !disabled && inputRef.current?.click()}
+          className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed cursor-pointer py-7 transition-all duration-150 select-none"
+          style={{
+            borderColor: dragging ? ACCENT : '#D4DEE9',
+            background:  dragging ? `${ACCENT}08` : '#FAFBFC',
+          }}
+        >
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${ACCENT}12` }}>
+            <UploadCloud size={20} style={{ color: ACCENT }} />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-[#061B31]">Click to select files</p>
+            <p className="text-xs text-[#64748D] mt-0.5">or drag and drop here</p>
+          </div>
+        </div>
+      )}
+
+      {files.length > 0 && (
+        <div className="rounded-lg border border-[#D4DEE9] overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-[#E5EDF5] bg-[#F8FAFC]">
+            <span className="text-xs font-semibold text-[#64748D]">
+              {files.length} file{files.length > 1 ? 's' : ''} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={disabled}
+              className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium disabled:opacity-50"
+              style={{ color: ACCENT, border: `1px solid ${ACCENT}50`, background: `${ACCENT}08` }}
+            >
+              <UploadCloud size={11} /> Add more
+            </button>
+          </div>
+          <ul className="divide-y divide-[#E5EDF5]">
+            {files.map((file, i) => (
+              <li key={i} className="flex items-center gap-2.5 px-3 py-2.5 bg-white">
+                <div className="w-7 h-7 rounded flex-shrink-0 flex items-center justify-center" style={{ background: `${ACCENT}12` }}>
+                  <FileText size={13} style={{ color: ACCENT }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-[#061B31] truncate">{file.name}</p>
+                  <p className="text-[11px] text-[#64748D]">{formatBytes(file.size)}</p>
+                </div>
+                {!disabled && (
+                  <button type="button" onClick={() => removeFile(i)} className="flex-shrink-0 text-[#D4DEE9] hover:text-red-400 transition-colors">
+                    <X size={13} />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── MetadataPanel ──────────────────────────────────────────────────────────
 
-export default function MetadataPanel({ files, onSubmit, uploading, progress, currentFolderId = null }: MetadataPanelProps) {
-  const { groups, loading: groupsLoading } = useGroups() as { groups: Group[]; loading: boolean };
+export default function MetadataPanel({ files, onFilesSelected, onSubmit, uploading, progress, currentFolderId = null }: MetadataPanelProps) {
+  const { groups, loading: groupsLoading }          = useGroups() as { groups: Group[]; loading: boolean };
+  const { userGroupIds, loading: userGroupLoading } = useUserGroupIds(); // ← from useGroups.ts, no longer inline
 
   const [projectName,        setProjectName]        = useState('');
   const [description,        setDescription]        = useState('');
@@ -425,6 +537,11 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
   const hasFiles      = files.length > 0;
   const isProjectMode = projectName.trim().length > 0 && !folderId;
 
+  // ── Permission check ───────────────────────────────────────────────────
+  const canUpload: boolean          = !selectedGroupId || userGroupIds.has(selectedGroupId);
+  const uploadBlockedByGroup: boolean = !!selectedGroupId && !userGroupIds.has(selectedGroupId);
+  // ──────────────────────────────────────────────────────────────────────
+
   function handleGroupSelect(id: string | null) {
     setSelectedGroupId(id);
     setSelectedSubGroupId(null);
@@ -432,7 +549,7 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
   }
 
   function handleSubmit() {
-    if (!hasFiles) return;
+    if (!hasFiles || !canUpload) return;
     if (isProjectMode && !selectedGroupId) {
       setValidationError('Please select a cohort to create the project in.');
       return;
@@ -452,7 +569,7 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
     ? `Uploading… ${progress}%`
     : isProjectMode
       ? `📁 Create Project & Upload ${files.length} file${files.length > 1 ? 's' : ''}`
-      : `⬆ Upload ${files.length > 0 ? `${files.length} ` : ''}file${files.length !== 1 ? 's' : ''}`;
+      : `⬆ Upload ${files.length} file${files.length !== 1 ? 's' : ''}`;
 
   return (
     <div className="bg-white border border-[#D4DEE9] rounded-[5px] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 flex flex-col gap-6">
@@ -464,38 +581,14 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
             <FolderOpen size={14} />
             Uploading into current folder
           </div>
-        ) : !hasFiles ? (
-          <div className="text-sm text-[#64748D]">Fill in details below — then select your files to upload</div>
         ) : (
-          <div className="text-sm font-medium" style={{ color: ACCENT }}>{files.length} file{files.length > 1 ? 's' : ''} selected — shared metadata will apply to all</div>
+          <div className="text-sm text-[#64748D]">Select files and fill in details below</div>
         )}
       </div>
 
-      {!folderId && (
-        <FormField label="Project name">
-          <input
-            type="text"
-            placeholder="e.g. Brand refresh 2026… (creates a new folder)"
-            value={projectName}
-            onChange={e => { setProjectName(e.target.value); setValidationError(''); }}
-            className="w-full text-sm text-[#061B31] bg-white border border-[#D4DEE9] rounded px-4 py-2.5 leading-[21px] placeholder-[#64748D]/70 outline-none focus:border-2 focus:border-[#533AFD] focus:ring-[3px] focus:ring-[#533AFD]/10 transition-all duration-150"
-          />
-          {isProjectMode && <p className="text-xs mt-1" style={{ color: ACCENT }}>📁 A new top-level folder will be created in the selected cohort</p>}
-        </FormField>
-      )}
-
-      <FormField label="Description">
-        <textarea
-          rows={3}
-          placeholder="Describe this project / files…"
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          className="w-full resize-none text-sm text-[#061B31] bg-white border border-[#D4DEE9] rounded px-4 py-3 leading-[21px] placeholder-[#64748D]/70 outline-none focus:border-2 focus:border-[#533AFD] focus:ring-[3px] focus:ring-[#533AFD]/10 transition-all duration-150"
-        />
-      </FormField>
-
+      {/* ── Cohort selector — always first so permission resolves before file picker ── */}
       <FormField label={isProjectMode ? 'Cohort (required for project)' : 'Share with Cohort'}>
-        {groupsLoading ? (
+        {groupsLoading || userGroupLoading ? (
           <div className="flex items-center gap-2 py-2">
             <Loader2 size={14} className="animate-spin text-[#533AFD]" />
             <span className="text-sm text-[#64748D]">Loading cohorts…</span>
@@ -503,6 +596,20 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
         ) : (
           <>
             <GroupDropdown groups={groups} selectedGroupId={selectedGroupId} onSelect={handleGroupSelect} />
+
+            {/* ── Permission banner ── */}
+            {uploadBlockedByGroup && (
+              <div className="mt-2 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+                <ShieldAlert size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-amber-700">View &amp; download only</p>
+                  <p className="text-xs text-amber-600 mt-0.5">
+                    Oops! PLease choose a <b>COHORT</b> before continuing.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {validationError && (
               <p className="text-xs mt-1.5 text-red-500 bg-red-50 border border-red-200 rounded px-2 py-1">{validationError}</p>
             )}
@@ -516,6 +623,31 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
         )}
       </FormField>
 
+      {!folderId && canUpload && (
+        <FormField label="Project name">
+          <input
+            type="text"
+            placeholder="e.g. Brand refresh 2026… (creates a new folder)"
+            value={projectName}
+            onChange={e => { setProjectName(e.target.value); setValidationError(''); }}
+            className="w-full text-sm text-[#061B31] bg-white border border-[#D4DEE9] rounded px-4 py-2.5 leading-[21px] placeholder-[#64748D]/70 outline-none focus:border-2 focus:border-[#533AFD] focus:ring-[3px] focus:ring-[#533AFD]/10 transition-all duration-150"
+          />
+          {isProjectMode && <p className="text-xs mt-1" style={{ color: ACCENT }}>📁 A new project folder will be created in the selected cohort</p>}
+        </FormField>
+      )}
+
+      {canUpload && (
+        <FormField label="Description">
+          <textarea
+            rows={3}
+            placeholder="Describe this project / files…"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            className="w-full resize-none text-sm text-[#061B31] bg-white border border-[#D4DEE9] rounded px-4 py-3 leading-[21px] placeholder-[#64748D]/70 outline-none focus:border-2 focus:border-[#533AFD] focus:ring-[3px] focus:ring-[#533AFD]/10 transition-all duration-150"
+          />
+        </FormField>
+      )}
+
       {uploading && (
         <div>
           <div className="flex justify-between text-xs text-[#64748D] mb-1.5">
@@ -527,8 +659,18 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
         </div>
       )}
 
-      <Button variant="primary" onClick={handleSubmit} disabled={!hasFiles || uploading} className="w-full justify-center">
-        {!hasFiles ? '⬆ Select files to upload' : buttonLabel}
+      <Button
+        variant="primary"
+        onClick={handleSubmit}
+        disabled={!hasFiles || uploading || uploadBlockedByGroup}
+        className="w-full justify-center"
+        style={uploadBlockedByGroup ? { background: '#94a3b8', cursor: 'not-allowed' } : {}}
+      >
+        {uploadBlockedByGroup
+          ? '🔒 View & Download Only'
+          : !hasFiles
+            ? '⬆ Select files above to upload'
+            : buttonLabel}
       </Button>
     </div>
   );

@@ -126,8 +126,9 @@ export default function Upload() {
             onRemove={handleRemove}
             onClear={() => setSelectedFiles([])}
           />
-          <MetadataPanel
+         <MetadataPanel
             files={selectedFiles}
+            onFilesSelected={handleFilesSelected}
             onSubmit={handleSubmit}
             uploading={uploading}
             progress={progress}
