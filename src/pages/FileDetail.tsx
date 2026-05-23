@@ -7,7 +7,7 @@ import { formatBytes } from '../lib/storage';
 import Layout from '../components/layout/Layout';
 import {
   ArrowLeft, Download, Trash2, Eye, EyeOff,
-  FileText, Calendar, HardDrive, Tag, FolderOpen,
+  Calendar, HardDrive, Tag, FolderOpen,
   Users, Loader2, AlertTriangle, ExternalLink,
 } from 'lucide-react';
 

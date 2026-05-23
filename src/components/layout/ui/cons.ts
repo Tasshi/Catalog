@@ -103,6 +103,7 @@ export interface FileItem {
   authorName?: string;
   size_bytes?: number;
   group_id?: string | null;
+  folder_id?: string | null;
 }
 
 export type IconSize = 'sm' | 'md' | 'lg';

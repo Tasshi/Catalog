@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -296,7 +296,6 @@ export default function SubfoldersView() {
   const { state }     = useLocation();
   const navigate      = useNavigate();
   const { showToast } = useApp();
-  const queryClient   = useQueryClient();
   const { profile }   = useAuth();
   const { groups }    = useGroups();
 

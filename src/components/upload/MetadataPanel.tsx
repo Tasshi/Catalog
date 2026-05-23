@@ -3,7 +3,7 @@ import { FormField, Button } from '../layout/ui';
 import {
   ChevronDown, FolderOpen, Check,
   UserPlus, Trash2, Phone, Mail, Users, Loader2, Layers, Clock,
-  UploadCloud, X, FileText, ShieldAlert,
+  ShieldAlert,
 } from 'lucide-react';
 import { useGroups, useGroupMembers, useSubGroups, useUserGroupIds } from '../../hooks/useGroups';
 import { supabase } from '../../lib/supabase';
@@ -47,11 +47,6 @@ function initials(name: string) {
   return (name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 // ── Member Form ────────────────────────────────────────────────────────────
 
@@ -418,111 +413,10 @@ function MembersSection({ groupId }: { groupId: string }) {
   );
 }
 
-// ── File Picker ────────────────────────────────────────────────────────────
-
-function FilePicker({ files, onFilesSelected, disabled }: {
-  files: File[];
-  onFilesSelected: (files: File[]) => void;
-  disabled?: boolean;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files.length > 0) {
-      onFilesSelected(Array.from(e.target.files));
-    }
-    e.target.value = '';
-  }
-
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragging(false);
-    if (disabled) return;
-    const dropped = Array.from(e.dataTransfer.files);
-    if (dropped.length > 0) onFilesSelected([...files, ...dropped]);
-  }
-
-  function removeFile(index: number) {
-    onFilesSelected(files.filter((_, i) => i !== index));
-  }
-
-  return (
-    <div>
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-        disabled={disabled}
-      />
-
-      {files.length === 0 && (
-        <div
-          onDragOver={e => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => !disabled && inputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed cursor-pointer py-7 transition-all duration-150 select-none"
-          style={{
-            borderColor: dragging ? ACCENT : '#D4DEE9',
-            background:  dragging ? `${ACCENT}08` : '#FAFBFC',
-          }}
-        >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${ACCENT}12` }}>
-            <UploadCloud size={20} style={{ color: ACCENT }} />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-[#061B31]">Click to select files</p>
-            <p className="text-xs text-[#64748D] mt-0.5">or drag and drop here</p>
-          </div>
-        </div>
-      )}
-
-      {files.length > 0 && (
-        <div className="rounded-lg border border-[#D4DEE9] overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-[#E5EDF5] bg-[#F8FAFC]">
-            <span className="text-xs font-semibold text-[#64748D]">
-              {files.length} file{files.length > 1 ? 's' : ''} selected
-            </span>
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={disabled}
-              className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium disabled:opacity-50"
-              style={{ color: ACCENT, border: `1px solid ${ACCENT}50`, background: `${ACCENT}08` }}
-            >
-              <UploadCloud size={11} /> Add more
-            </button>
-          </div>
-          <ul className="divide-y divide-[#E5EDF5]">
-            {files.map((file, i) => (
-              <li key={i} className="flex items-center gap-2.5 px-3 py-2.5 bg-white">
-                <div className="w-7 h-7 rounded flex-shrink-0 flex items-center justify-center" style={{ background: `${ACCENT}12` }}>
-                  <FileText size={13} style={{ color: ACCENT }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-[#061B31] truncate">{file.name}</p>
-                  <p className="text-[11px] text-[#64748D]">{formatBytes(file.size)}</p>
-                </div>
-                {!disabled && (
-                  <button type="button" onClick={() => removeFile(i)} className="flex-shrink-0 text-[#D4DEE9] hover:text-red-400 transition-colors">
-                    <X size={13} />
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── MetadataPanel ──────────────────────────────────────────────────────────
 
-export default function MetadataPanel({ files, onFilesSelected, onSubmit, uploading, progress, currentFolderId = null }: MetadataPanelProps) {
+export default function MetadataPanel({ files, onSubmit, uploading, progress, currentFolderId = null }: MetadataPanelProps) {
   const { groups, loading: groupsLoading }          = useGroups() as { groups: Group[]; loading: boolean };
   const { userGroupIds, loading: userGroupLoading } = useUserGroupIds();
 

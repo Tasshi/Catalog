@@ -315,7 +315,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         let retries = 3;
         while (retries > 0) {
-          const { data, error } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data, error } = await (supabase as any)
             .from('profiles')
             .select('*')
             .eq('id', u.id)
@@ -333,7 +334,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (!data.full_name  && googleName)   patch.full_name  = googleName;
               if (!data.avatar_url && googleAvatar) patch.avatar_url = googleAvatar;
               if (Object.keys(patch).length > 0) {
-                const { data: synced } = await supabase
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: synced } = await (supabase as any)
                   .from('profiles')
                   .update(patch)
                   .eq('id', u.id)
@@ -351,7 +353,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const full_name  = (meta.full_name ?? meta.name ?? u.email ?? '') as string;
             const avatar_url = (meta.avatar_url ?? meta.picture ?? null) as string | null;
 
-            const { data: created, error: upsertErr } = await supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: created, error: upsertErr } = await (supabase as any)
               .from('profiles')
               .upsert(
                 { id: u.id, full_name, avatar_url, role: 'user', email: u.email ?? null, phone: (meta.phone ?? null) as string | null },
