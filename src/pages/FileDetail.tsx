@@ -1,652 +1,577 @@
-
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { getFileExtension, getFileConfig } from '../lib/metadata';
+import { formatBytes } from '../lib/storage';
 import Layout from '../components/layout/Layout';
-import Header from '../components/layout/Header';
-import AuditLog from '../components/filedetail/AuditLog';
-import VersionHistory from '../components/filedetail/VersionHistory';
-import { Button } from '../components/layout/ui';
-import { getFileConfig, getFileExtension } from '../lib/metadata';
-import { downloadFile, formatBytes } from '../lib/storage';
-import { useApp } from '../contexts/AppContext';
-import { format } from 'date-fns';
-import { Download, Eye, Edit3, X, Users, Mail, Phone, Loader2, Save, Tag } from 'lucide-react';
-import type { FileDetail } from '@/components/layout/ui/cons';
-import { useGroupMembers, useGroups } from '../hooks/useGroups';
+import {
+  ArrowLeft, Download, Trash2, Eye, EyeOff,
+  FileText, Calendar, HardDrive, Tag, FolderOpen,
+  Users, Loader2, AlertTriangle, ExternalLink,
+} from 'lucide-react';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface FileRecord {
+  id: string;
+  name: string;
+  path?: string;
+  storage_path?: string;
+  size_bytes?: number | null;
+  created_at: string;
+  folder_id?: string | null;
+  group_id?: string | null;
+  uploaded_by?: string | null;
+  description?: string | null;
+  is_deleted?: boolean;
+  [key: string]: unknown;
+}
+
+interface FolderInfo {
+  id: string;
+  name: string;
+  icon?: string | null;
+  parent_id?: string | null;
+  parent_name?: string | null;
+}
+
+interface UploaderInfo {
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+}
+
+interface GroupInfo {
+  id: string;
+  name: string;
+  icon?: string | null;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
 
-// ── Avatar colours ────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const AVATAR_COLORS = [
-  { bg: '#CECBF6', text: '#3C3489' },
-  { bg: '#9FE1CB', text: '#085041' },
-  { bg: '#FAC775', text: '#633806' },
-  { bg: '#F4C0D1', text: '#72243E' },
-];
+function fmtDate(iso: string | null | undefined, long = false) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString('en-GB', long
+      ? { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+      : { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return '—'; }
+}
 
 function initials(name: string) {
-  return (name ?? '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
 }
 
-// ── GroupAccessPanel ──────────────────────────────────────────────────────────
-
-function GroupAccessPanel({ groupId, groupName, groupIcon }: {
-  groupId:    string;
-  groupName:  string;
-  groupIcon?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const { members, loading } = useGroupMembers(groupId);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2.5 p-2.5 rounded-lg text-left transition-all hover:opacity-80"
-        style={{ background: 'var(--glass)', border: '1px solid var(--border)' }}
-      >
-        <span className="text-xl">{groupIcon}</span>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{groupName}</div>
-          <div className="text-xs" style={{ color: 'var(--text3)' }}>Shared with group members</div>
-        </div>
-        <Users size={14} style={{ color: '#533AFD', flexShrink: 0 }} />
-      </button>
-
-      {open && (
-        <div
-          className="fixed inset-0 z-40"
-          style={{ background: 'rgba(0,0,0,0.25)' }}
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      <div
-        className="fixed top-0 right-0 h-full z-50 flex flex-col"
-        style={{
-          width:      '320px',
-          background: 'var(--surface, #1a1f2e)',
-          borderLeft: '1px solid var(--border)',
-          boxShadow:  '-4px 0 24px rgba(0,0,0,0.12)',
-          transform:  open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.25s ease',
-        }}
-      >
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Group details</span>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:opacity-70"
-            style={{ border: '1px solid var(--border)', color: 'var(--text3)' }}
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
-            style={{ background: '#EEEDFE', border: '1px solid #C9C3F0' }}
-          >
-            <span>{groupIcon}</span>
-            <span className="text-sm font-medium" style={{ color: '#533AFD' }}>{groupName}</span>
-          </div>
-
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text3)' }}>
-            Members
-          </p>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-10 gap-2">
-              <Loader2 size={16} className="animate-spin" style={{ color: '#533AFD' }} />
-              <span className="text-sm" style={{ color: 'var(--text3)' }}>Loading members…</span>
-            </div>
-          ) : members.length === 0 ? (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--text3)' }}>No members in this group</p>
-          ) : (
-            <div className="flex flex-col">
-              {members.map((m, i) => {
-                const name  = m.profile?.full_name ?? '(Unknown)';
-                const email = m.profile?.email     ?? '—';
-                const phone = m.profile?.phone;
-                const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-                return (
-                  <div
-                    key={m.id}
-                    className="flex items-start gap-3 py-3"
-                    style={{ borderBottom: i < members.length - 1 ? '1px solid var(--border)' : 'none' }}
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
-                      style={{ background: color.bg, color: color.text }}
-                    >
-                      {initials(name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{name}</p>
-                      <p className="flex items-center gap-1.5 text-xs mt-0.5 truncate" style={{ color: 'var(--text3)' }}>
-                        <Mail size={10} style={{ flexShrink: 0 }} />{email}
-                      </p>
-                      {phone && (
-                        <p className="flex items-center gap-1.5 text-xs mt-0.5" style={{ color: 'var(--text3)' }}>
-                          <Phone size={10} style={{ flexShrink: 0 }} />{phone}
-                        </p>
-                      )}
-                      <span
-                        className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                        style={{ background: '#EEEDFE', color: '#533AFD' }}
-                      >
-                        {m.role ?? 'viewer'}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
+function hashColor(str: string) {
+  const palette = ['#5B8DEF', '#4CAF7D', '#F5C842', '#E07B54', '#A78BFA', '#F472B6', '#34D399'];
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  return palette[Math.abs(h) % palette.length];
 }
 
-// ── PreviewModal ──────────────────────────────────────────────────────────────
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function PreviewModal({ file, onClose }: { file: FileDetail; onClose: () => void }) {
-  const ext = getFileExtension(file.name).toLowerCase();
-
-  const isImage   = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext);
-  const isPdf     = ext === 'pdf';
-  const isPreview = isImage || isPdf;
-
-  const { data } = supabase.storage.from('files').getPublicUrl(file.storage_path);
-  const url   = data?.publicUrl ?? null;
-  const error = !url;
-
+function Avatar({ name, avatarUrl, size = 36 }: { name: string; avatarUrl?: string | null; size?: number }) {
+  const color = hashColor(name);
+  if (avatarUrl) {
+    return (
+      <img src={avatarUrl} alt={name}
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+    );
+  }
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        className="relative flex flex-col rounded-xl overflow-hidden"
-        style={{
-          background: 'var(--surface, #1a1f2e)',
-          border:     '1px solid var(--border)',
-          boxShadow:  '0 24px 64px rgba(0,0,0,0.4)',
-          width:      isImage ? 'auto' : '90vw',
-          maxWidth:   '960px',
-          maxHeight:  '90vh',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div
-          className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-          style={{ borderBottom: '1px solid var(--border)' }}
-        >
-          <span className="text-sm font-medium truncate max-w-[80%]" style={{ color: 'var(--text)' }}>
-            {file.name}
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center justify-center w-7 h-7 rounded-lg hover:opacity-70 transition-opacity"
-            style={{ border: '1px solid var(--border)', color: 'var(--text3)' }}
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-auto flex items-center justify-center p-4" style={{ minHeight: '300px' }}>
-          {error || !isPreview ? (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <div
-                className="w-16 h-20 rounded-lg flex items-center justify-center font-mono text-sm font-medium"
-                style={{ background: getFileConfig(ext).bg, color: getFileConfig(ext).color }}
-              >
-                {ext.toUpperCase()}
-              </div>
-              <p className="text-sm" style={{ color: 'var(--text3)' }}>
-                Preview not available for this file type
-              </p>
-              {url && (
-                <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium" style={{ color: '#533AFD' }}>
-                  Open in new tab ↗
-                </a>
-              )}
-            </div>
-          ) : isImage ? (
-            <img src={url!} alt={file.name} className="max-w-full max-h-[70vh] rounded-lg object-contain" />
-          ) : (
-            <iframe src={url!} title={file.name} className="w-full rounded-lg" style={{ height: '70vh', border: 'none' }} />
-          )}
-        </div>
-      </div>
+    <div className="rounded-full shrink-0 flex items-center justify-center text-white font-bold"
+      style={{ width: size, height: size, background: color, fontSize: size * 0.36 }}>
+      {initials(name)}
     </div>
   );
 }
 
-// ── EditMetadataModal ─────────────────────────────────────────────────────────
+// ─── FilePreview ──────────────────────────────────────────────────────────────
 
-function EditMetadataModal({
-  file,
-  onClose,
-  onSaved,
-}: {
-  file:    FileDetail;
-  onClose: () => void;
-  onSaved: (updated: Partial<FileDetail>) => void;
-}) {
-  const { groups } = useGroups();
-  const [description, setDescription] = useState(file.description ?? '');
-  const [tags,        setTags]        = useState<string[]>(file.tags ?? []);
-  const [tagInput,    setTagInput]    = useState('');
-  const [groupId,     setGroupId]     = useState<string | null>(file.group_id ?? null);
-  const [saving,      setSaving]      = useState(false);
-  const [error,       setError]       = useState<string | null>(null);
+function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
+  const [url, setUrl]         = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+  const [visible, setVisible] = useState(true);
 
-  function addTag(e: React.KeyboardEvent<HTMLInputElement>) {
-    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
-      e.preventDefault();
-      const tag = tagInput.trim().replace(',', '');
-      if (!tags.includes(tag)) setTags(prev => [...prev, tag]);
-      setTagInput('');
-    }
-  }
+  const isImage  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+  const isPdf    = ext === 'pdf';
+  const isOffice = ['xlsx', 'xls', 'docx', 'doc', 'pptx', 'ppt'].includes(ext);
+  const isText   = ['txt', 'md', 'csv', 'json', 'xml', 'html', 'css', 'js', 'ts'].includes(ext);
+  const canPreview = isImage || isPdf || isOffice || isText;
 
-  async function handleSave() {
-    setSaving(true);
-    setError(null);
-    try {
-      const updates = { description, tags, group_id: groupId };
-      const { error: updateError } = await db          // ✅ fixed
-        .from('files')
-        .update(updates)
-        .eq('id', file.id);
-      if (updateError) throw updateError;
-      onSaved({ description, tags, group_id: groupId });
-      onClose();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const labelCls = 'block text-[11px] font-semibold uppercase tracking-widest mb-1.5';
-  const fieldCls = [
-    'w-full rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all duration-150',
-    'bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827]',
-    'placeholder-[#9CA3AF]',
-    'focus:bg-white focus:border-[#533AFD] focus:ring-2 focus:ring-[#533AFD]/12',
-  ].join(' ');
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(17,24,39,0.55)', backdropFilter: 'blur(2px)' }}
-      onClick={onClose}
-    >
-      <div
-        className="flex flex-col rounded-2xl w-full max-w-md overflow-hidden"
-        style={{
-          background: '#FFFFFF',
-          border:     '1px solid #E5E7EB',
-          boxShadow:  '0 20px 60px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.06)',
-          maxHeight:  '90vh',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div
-          className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-          style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#EEF2FF' }}>
-              <Edit3 size={13} style={{ color: '#533AFD' }} />
-            </div>
-            <span className="text-sm font-semibold text-[#111827]">Edit Metadata</span>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
-            style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280' }}
-            onMouseOver={e => (e.currentTarget.style.background = '#E5E7EB')}
-            onMouseOut={e  => (e.currentTarget.style.background = '#F3F4F6')}
-          >
-            <X size={13} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5" style={{ background: '#FFFFFF' }}>
-          <div>
-            <label className={labelCls} style={{ color: '#6B7280' }}>File</label>
-            <div
-              className="px-3.5 py-2.5 rounded-lg text-sm truncate"
-              style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280' }}
-            >
-              {file.name}
-            </div>
-          </div>
-
-          <div>
-            <label className={labelCls} style={{ color: '#6B7280' }}>Description</label>
-            <textarea
-              rows={3}
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Describe this file…"
-              className={fieldCls + ' resize-none leading-relaxed'}
-            />
-          </div>
-
-          <div>
-            <label className={labelCls} style={{ color: '#6B7280' }}>Tags</label>
-            <div
-              className="flex flex-wrap gap-1.5 items-center px-3 py-2 rounded-lg min-h-[44px] transition-all duration-150 focus-within:bg-white focus-within:border-[#533AFD] focus-within:ring-2 focus-within:ring-[#533AFD]/12"
-              style={{ background: '#F3F4F6', border: '1px solid #E5E7EB' }}
-            >
-              {tags.map(t => (
-                <span
-                  key={t}
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium"
-                  style={{ background: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE' }}
-                >
-                  <Tag size={9} />
-                  {t}
-                  <button
-                    type="button"
-                    onClick={() => setTags(prev => prev.filter(x => x !== t))}
-                    className="transition-opacity hover:opacity-60 ml-0.5"
-                  >
-                    <X size={9} />
-                  </button>
-                </span>
-              ))}
-              <input
-                className="bg-transparent border-none outline-none text-sm flex-1 min-w-[100px] text-[#111827] placeholder-[#9CA3AF]"
-                placeholder={tags.length === 0 ? 'Add tag, press Enter…' : 'Add more…'}
-                value={tagInput}
-                onChange={e => setTagInput(e.target.value)}
-                onKeyDown={addTag}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelCls} style={{ color: '#6B7280' }}>Share with Group</label>
-            <div className="relative">
-              <select
-                value={groupId ?? ''}
-                onChange={e => setGroupId(e.target.value || null)}
-                className={fieldCls + ' appearance-none pr-8 cursor-pointer'}
-              >
-                <option value="">Personal — don't share</option>
-                {groups.map(g => (
-                  <option key={g.id} value={g.id}>{g.icon} {g.name}</option>
-                ))}
-              </select>
-              <svg
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                width="12" height="12" viewBox="0 0 12 12" fill="none"
-              >
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
-
-          {error && (
-            <p
-              className="text-xs px-3 py-2 rounded-lg"
-              style={{ background: '#FEF2F2', color: '#991B1B', border: '1px solid #FECACA' }}
-            >
-              {error}
-            </p>
-          )}
-        </div>
-
-        <div
-          className="flex gap-3 px-6 py-4 flex-shrink-0"
-          style={{ background: '#F9FAFB', borderTop: '1px solid #E5E7EB' }}
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-            style={{ background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#374151' }}
-            onMouseOver={e => (e.currentTarget.style.background = '#F9FAFB')}
-            onMouseOut={e  => (e.currentTarget.style.background = '#FFFFFF')}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 flex items-center justify-center gap-1.5 text-white"
-            style={{ background: saving ? '#7C6FFC' : '#533AFD' }}
-            onMouseOver={e => { if (!saving) e.currentTarget.style.background = '#4330d4'; }}
-            onMouseOut={e  => { if (!saving) e.currentTarget.style.background = '#533AFD'; }}
-          >
-            {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-            {saving ? 'Saving…' : 'Save Changes'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── FileDetail page ───────────────────────────────────────────────────────────
-
-export default function FileDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { showToast } = useApp();
-
-  const [file,         setFile]         = useState<FileDetail | null>(null);
-  const [loading,      setLoading]      = useState(true);
-  const [showPreview,  setShowPreview]  = useState(false);
-  const [showEditMeta, setShowEditMeta] = useState(false);
+  const storagePath = (file.storage_path ?? file.path) as string | undefined;
 
   useEffect(() => {
-    if (!id) return;
+    if (!storagePath || !canPreview) { setLoading(false); return; }
+
+    let objectUrl: string | null = null;
+
+    (async () => {
+      try {
+        if (isOffice) {
+          const { data, error: e } = await supabase.storage
+            .from('filevault')
+            .createSignedUrl(storagePath, 3600);
+          if (e || !data) throw new Error(e?.message ?? 'Signed URL failed');
+          setUrl(`https://docs.google.com/viewer?url=${encodeURIComponent(data.signedUrl)}&embedded=true`);
+        } else {
+          const { data, error: e } = await supabase.storage
+            .from('filevault')
+            .download(storagePath);
+          if (e || !data) throw new Error(e?.message ?? 'Download failed');
+          objectUrl = URL.createObjectURL(data);
+          setUrl(objectUrl);
+        }
+      } catch (err) {
+        setError(String(err));
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [storagePath]);
+
+  const cfg = getFileConfig(ext);
+
+  if (!visible) {
+    return (
+      <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center h-16">
+        <button onClick={() => setVisible(true)}
+          className="flex items-center gap-2 text-xs text-slate-500 hover:text-violet-600 border-0 bg-transparent cursor-pointer">
+          <Eye size={13} /> Show preview
+        </button>
+      </div>
+    );
+  }
+
+  if (!canPreview) {
+    return (
+      <div className="bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center py-12 gap-3">
+        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-sm font-bold"
+          style={{ background: cfg.bg, color: cfg.color }}>
+          {cfg.label.slice(0, 3).toUpperCase()}
+        </div>
+        <p className="text-[13px] text-slate-400">No preview available for .{ext} files</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+      {/* Preview toolbar */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-100">
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Preview</span>
+        <button onClick={() => setVisible(false)}
+          className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
+          <EyeOff size={11} /> Hide
+        </button>
+      </div>
+
+      <div className="flex items-center justify-center" style={{ minHeight: 320, maxHeight: 600 }}>
+        {loading && (
+          <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
+            <Loader2 size={22} className="animate-spin" />
+            <span className="text-[12px]">Loading preview…</span>
+          </div>
+        )}
+        {!loading && error && (
+          <div className="flex flex-col items-center gap-3 py-16 text-center px-6">
+            <AlertTriangle size={22} className="text-amber-400" />
+            <p className="text-[12px] text-slate-500 max-w-xs">Preview unavailable: {error}</p>
+          </div>
+        )}
+        {!loading && !error && url && isImage && (
+          <img src={url} alt={file.name}
+            className="max-w-full max-h-full object-contain p-4 rounded"
+            style={{ maxHeight: 560 }} />
+        )}
+        {!loading && !error && url && (isPdf || isOffice) && (
+          <iframe src={url} title={file.name}
+            className="w-full border-none"
+            style={{ height: 560 }} />
+        )}
+        {!loading && !error && url && isText && (
+          <iframe src={url} title={file.name}
+            className="w-full border-none bg-white"
+            style={{ height: 400 }} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── MetaRow ──────────────────────────────────────────────────────────────────
+
+function MetaRow({ icon: Icon, label, children }: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-3 border-b border-slate-50 last:border-0">
+      <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
+        <Icon size={13} className="text-slate-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{label}</p>
+        <div className="text-[13px] text-slate-700">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function FileDetail() {
+  const { fileId, id } = useParams<{ fileId?: string; id?: string }>();
+  const resolvedId = fileId ?? id; // works with both /files/:fileId and /files/:id
+  const navigate     = useNavigate();
+  const { profile }  = useAuth();
+
+  const [file,     setFile]     = useState<FileRecord | null>(null);
+  const [folder,   setFolder]   = useState<FolderInfo | null>(null);
+  const [uploader, setUploader] = useState<UploaderInfo | null>(null);
+  const [group,    setGroup]    = useState<GroupInfo | null>(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  // ── Load file + related data ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!resolvedId) return;
     let cancelled = false;
 
     (async () => {
       setLoading(true);
       try {
-        const { data, error } = await db               // ✅ fixed
+        // 1. File record
+        const { data: f, error: fErr } = await db
           .from('files')
-          .select(`
-            *,
-            uploaded_by_profile:profiles!uploaded_by(full_name),
-            group:groups(name, icon, description)
-          `)
-          .eq('id', id)
-          .single();
+          .select('*')
+          .eq('id', resolvedId)
+          .maybeSingle();
+        if (fErr) throw new Error(fErr.message);
+        if (!f) throw new Error('File not found.');
+        if (!cancelled) setFile(f as FileRecord);
 
-        if (error) throw error;
-        if (!cancelled) setFile(data as FileDetail);
-      } catch (err: unknown) {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Unknown error';
-          console.error('Error fetching file:', msg);
-          showToast('Could not load file details', 'error');
+        // 2. Folder info (+ parent name for breadcrumb)
+        if (f.folder_id) {
+          const { data: fo } = await db
+            .from('subprojects')
+            .select('id, name, icon, parent_id')
+            .eq('id', f.folder_id)
+            .maybeSingle();
+          if (!cancelled && fo) {
+            let parentName: string | null = null;
+            if (fo.parent_id) {
+              const { data: pfo } = await db
+                .from('subprojects')
+                .select('name')
+                .eq('id', fo.parent_id)
+                .maybeSingle();
+              parentName = pfo?.name ?? null;
+            }
+            setFolder({ ...fo, parent_name: parentName });
+          }
         }
+
+        // 3. Uploader profile
+        if (f.uploaded_by) {
+          const { data: up } = await db
+            .from('profiles')
+            .select('full_name, email, avatar_url')
+            .eq('id', f.uploaded_by)
+            .maybeSingle();
+          if (!cancelled && up) setUploader(up as UploaderInfo);
+        }
+
+        // 4. Group info
+        if (f.group_id) {
+          const { data: g } = await db
+            .from('groups')
+            .select('id, name, icon')
+            .eq('id', f.group_id)
+            .maybeSingle();
+          if (!cancelled && g) setGroup(g as GroupInfo);
+        }
+      } catch (e) {
+        if (!cancelled) setError(String(e));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
 
     return () => { cancelled = true; };
-  }, [id, showToast]);
+  }, [resolvedId]);
 
+  // ── Download ───────────────────────────────────────────────────────────────
   async function handleDownload() {
     if (!file) return;
+    const storagePath = (file.storage_path ?? file.path) as string | undefined;
+    if (!storagePath) return;
+    setDownloading(true);
     try {
-      await downloadFile(file.storage_path, file.name);
-      showToast(`Downloading ${file.name}`);
-    } catch {
-      showToast('Download failed', 'error');
+      const { data, error: e } = await supabase.storage
+        .from('filevault')
+        .download(storagePath);
+      if (e || !data) throw new Error(e?.message ?? 'Download failed');
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url; a.download = file.name;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed:', err);
+    } finally {
+      setDownloading(false);
     }
   }
 
-  function handleMetaSaved(updated: Partial<FileDetail>) {
-    setFile(prev => prev ? { ...prev, ...updated } : prev);
-    showToast('Metadata updated');
+  // ── Delete ─────────────────────────────────────────────────────────────────
+  async function handleDelete() {
+    if (!file || !window.confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await db.from('files').update({ is_deleted: true }).eq('id', file.id);
+      navigate(-1);
+    } catch (err) {
+      console.error('Delete failed:', err);
+      setDeleting(false);
+    }
   }
 
-  if (loading) return (
-    <Layout>
-      <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--text3)' }}>Loading…</div>
-    </Layout>
-  );
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const ext = file ? getFileExtension(file.name) : '';
+  const cfg = getFileConfig(ext);
+  const canEdit = !!(profile?.cohort && group?.name && profile.cohort === group.name);
 
-  if (!file) return (
-    <Layout>
-      <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--text3)' }}>File not found</div>
-    </Layout>
-  );
+  // ── States ─────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex-1 flex items-center justify-center bg-slate-50">
+          <Loader2 size={20} className="animate-spin text-slate-300" />
+        </div>
+      </Layout>
+    );
+  }
 
-  const ext     = getFileExtension(file.name);
-  const cfg     = getFileConfig(ext);
-  const dateStr = file.created_at ? format(new Date(file.created_at), 'MMM d, yyyy') : '—';
-
-  const META = [
-    ['File Type',   `.${(file.file_type || ext || '').toUpperCase()}`],
-    ['File Size',   formatBytes(file.size_bytes)],
-    ['Upload Date', dateStr],
-    ['Uploaded By', file.uploaded_by_profile?.full_name || 'Unknown'],
-    ['Group',       file.group?.name || 'Personal'],
-    ['Version',     `v${file.version || 1}`],
-  ];
+  if (error || !file) {
+    return (
+      <Layout>
+        <div className="flex-1 flex items-center justify-center bg-slate-50">
+          <div className="text-center">
+            <p className="text-sm text-slate-500 mb-3">{error ?? 'File not found.'}</p>
+            <button onClick={() => navigate(-1)}
+              className="text-sm text-violet-600 hover:underline border-0 bg-transparent cursor-pointer">
+              ← Go back
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <Header title="File Detail" />
-      <div className="flex-1 overflow-y-auto p-6 animate-slideIn">
+      <div className="flex-1 overflow-y-auto bg-slate-50">
 
-        <div className="flex items-center gap-1.5 text-xs mb-5" style={{ color: 'var(--text3)' }}>
-          <button
-            onClick={() => navigate('/catalog')}
-            className="cursor-pointer transition-colors hover:text-cyan-400 bg-transparent border-none p-0"
-            style={{ color: 'var(--text3)' }}
-          >
-            My Catalog
-          </button>
-          <span>›</span>
-          <span style={{ color: 'var(--text)' }}>{file.name}</span>
-        </div>
-
-        <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 320px' }}>
-
-          <div className="flex flex-col gap-4">
-            <div className="card flex flex-col items-center justify-center py-10 gap-4">
-              <div
-                className="rounded-xl flex items-center justify-center font-mono text-lg font-medium"
-                style={{ width: 80, height: 96, background: cfg.bg, color: cfg.color }}
-              >
-                {cfg.label}
-              </div>
-              <div className="text-center">
-                <div className="font-serif text-2xl" style={{ color: 'var(--text)' }}>{file.name}</div>
-                <div className="text-sm mt-1" style={{ color: 'var(--text3)' }}>
-                  {formatBytes(file.size_bytes)} · Uploaded {dateStr}
-                </div>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Button variant="primary" onClick={handleDownload}>
-                  <Download size={13} className="mr-1" /> Download
-                </Button>
-                <Button variant="ghost" onClick={() => setShowPreview(true)}>
-                  <Eye size={13} className="mr-1" /> Preview
-                </Button>
-                <Button variant="ghost" onClick={() => setShowEditMeta(true)}>
-                  <Edit3 size={13} className="mr-1" /> Edit Metadata
-                </Button>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text3)' }}>
-                File Metadata
-              </div>
-              <div className="grid gap-2.5" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                {META.map(([label, value]) => (
-                  <div key={label}>
-                    <div className="text-xs mb-0.5" style={{ color: 'var(--text3)' }}>{label}</div>
-                    <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{value}</div>
-                  </div>
-                ))}
-              </div>
-              {file.description && (
-                <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-                  <div className="text-xs mb-1" style={{ color: 'var(--text3)' }}>Description</div>
-                  <div className="text-sm" style={{ color: 'var(--text)' }}>{file.description}</div>
-                </div>
+        {/* ── Page header ── */}
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
+          <div>
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-1">
+              <button onClick={() => navigate('/groups')}
+                className="hover:text-violet-600 border-0 bg-transparent cursor-pointer p-0 text-[11px]">
+                Root
+              </button>
+              {group && (
+                <>
+                  <span className="text-slate-300">/</span>
+                  <button onClick={() => navigate(`/groups/${group.id}`)}
+                    className="hover:text-violet-600 border-0 bg-transparent cursor-pointer p-0 text-[11px]">
+                    {group.icon ? `${group.icon} ` : ''}{group.name}
+                  </button>
+                </>
               )}
-            </div>
+              {folder?.parent_name && (
+                <>
+                  <span className="text-slate-300">/</span>
+                  <span className="text-slate-500">{folder.parent_name}</span>
+                </>
+              )}
+              {folder && (
+                <>
+                  <span className="text-slate-300">/</span>
+                  <span className="text-slate-500">{folder.icon ?? '📁'} {folder.name}</span>
+                </>
+              )}
+              <span className="text-slate-300">/</span>
+              <span className="text-slate-700 font-medium truncate max-w-[200px]">{file.name}</span>
+            </nav>
 
-            <div className="card">
-              <div className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text3)' }}>
-                Audit Log
-              </div>
-              <AuditLog fileId={id || ''} />
-            </div>
+            <h1 className="text-[16px] font-semibold text-slate-900 flex items-center gap-2 truncate max-w-xl">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-bold shrink-0"
+                style={{ background: cfg.bg, color: cfg.color }}>
+                {cfg.label.slice(0, 3).toUpperCase()}
+              </span>
+              {file.name}
+            </h1>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="card">
-              <div className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text3)' }}>
-                Version History
-              </div>
-              <VersionHistory fileId={id || ''} currentVersion={file.version ?? 1} />
-            </div>
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+              <ArrowLeft size={13} /> Back
+            </button>
 
-            <div className="card">
-              <div className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text3)' }}>
-                Group Access
-              </div>
-              {file.group && file.group_id ? (
-                <GroupAccessPanel
-                  groupId={file.group_id}
-                  groupName={file.group.name}
-                  groupIcon={file.group.icon}
-                />
-              ) : (
-                <div className="text-sm" style={{ color: 'var(--text3)' }}>
-                  Personal file — not shared with any group
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => void handleDownload()}
+              disabled={downloading}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors disabled:opacity-50">
+              {downloading
+                ? <Loader2 size={13} className="animate-spin" />
+                : <Download size={13} />}
+              {downloading ? 'Downloading…' : 'Download'}
+            </button>
 
-            {(file.tags?.length ?? 0) > 0 && (
-              <div className="card">
-                <div className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text3)' }}>
-                  Tags
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {file.tags?.map((t: string) => (
-                    <span key={t} className="tag-pill">{t}</span>
-                  ))}
-                </div>
-              </div>
+            {canEdit && (
+              <button
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-red-600 bg-red-50 border border-red-100 hover:bg-red-100 cursor-pointer transition-colors disabled:opacity-50">
+                {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
             )}
           </div>
         </div>
-      </div>
 
-      {showPreview  && <PreviewModal      file={file} onClose={() => setShowPreview(false)} />}
-      {showEditMeta && <EditMetadataModal file={file} onClose={() => setShowEditMeta(false)} onSaved={handleMetaSaved} />}
+        {/* ── Body ── */}
+        <div className="p-6">
+          <div className="flex gap-5 items-start">
+
+            {/* ── Left: preview ── */}
+            <div className="flex-1 min-w-0 flex flex-col gap-4">
+              <FilePreview file={file} ext={ext} />
+
+              {/* Description card */}
+              {file.description && (
+                <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
+                  <h3 className="text-[12px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Description</h3>
+                  <p className="text-[13px] text-slate-700 leading-relaxed">{String(file.description)}</p>
+                </div>
+              )}
+            </div>
+
+            {/* ── Right: metadata sidebar ── */}
+            <div className="w-[300px] shrink-0 flex flex-col gap-4">
+
+              {/* File info card */}
+              <div className="bg-white rounded-xl border border-slate-200">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h2 className="text-[14px] font-semibold text-slate-800">File info</h2>
+                </div>
+                <div className="px-5 py-2">
+
+                  <MetaRow icon={HardDrive} label="Size">
+                    {formatBytes(Number(file.size_bytes ?? 0))}
+                  </MetaRow>
+
+                  <MetaRow icon={Tag} label="Type">
+                    <span className="inline-flex items-center h-5 px-2 rounded text-[10px] font-semibold uppercase"
+                      style={{ background: cfg.bg, color: cfg.color }}>
+                      {cfg.label}
+                    </span>
+                    <span className="text-slate-400 ml-1 text-[12px]">.{ext}</span>
+                  </MetaRow>
+
+                  <MetaRow icon={Calendar} label="Uploaded">
+                    <span title={fmtDate(file.created_at, true)}>
+                      {fmtDate(file.created_at)}
+                    </span>
+                  </MetaRow>
+
+                  {folder && (
+                    <MetaRow icon={FolderOpen} label="Folder">
+                      <button
+                        onClick={() => group && navigate(`/groups/${group.id}`)}
+                        className="flex items-center gap-1.5 text-violet-600 hover:underline border-0 bg-transparent cursor-pointer p-0 text-[13px]">
+                        {folder.icon ?? '📁'} {folder.name}
+                        <ExternalLink size={10} className="text-slate-300" />
+                      </button>
+                    </MetaRow>
+                  )}
+
+                  {group && (
+                    <MetaRow icon={FolderOpen} label="Cohort">
+                      <button
+                        onClick={() => navigate(`/groups/${group.id}`)}
+                        className="flex items-center gap-1.5 text-violet-600 hover:underline border-0 bg-transparent cursor-pointer p-0 text-[13px]">
+                        {group.icon ?? ''} {group.name}
+                        <ExternalLink size={10} className="text-slate-300" />
+                      </button>
+                    </MetaRow>
+                  )}
+
+                </div>
+              </div>
+
+              {/* Uploader card */}
+              <div className="bg-white rounded-xl border border-slate-200">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h2 className="text-[14px] font-semibold text-slate-800">Uploaded by</h2>
+                </div>
+                <div className="px-5 py-4">
+                  {uploader ? (
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={uploader.full_name ?? uploader.email ?? 'User'}
+                        avatarUrl={uploader.avatar_url}
+                        size={38}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-medium text-slate-700 truncate">
+                          {uploader.full_name ?? 'Unknown user'}
+                        </p>
+                        {uploader.email && (
+                          <p className="text-[11px] text-slate-400 truncate">{uploader.email}</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
+                        <Users size={14} className="text-slate-300" />
+                      </div>
+                      <p className="text-[13px] text-slate-400">Unknown uploader</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* File ID (dev utility) */}
+              <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">File ID</p>
+                <p className="text-[11px] font-mono text-slate-400 break-all select-all">{file.id}</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 }

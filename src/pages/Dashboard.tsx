@@ -7,7 +7,9 @@ import { FileRow } from '../components/catalog/FileCard';
 import { useNavigate } from 'react-router-dom';
 import { downloadFile } from '../lib/storage';
 import { useApp } from '../contexts/AppContext';
-import { FolderOpen, Users, HardDrive, Share2 } from 'lucide-react';
+import { FolderOpen, Users, Layers } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 import type { FileItem } from '../components/layout/ui/cons';
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -51,10 +53,20 @@ export default function Dashboard() {
   const { showToast } = useApp();
   const navigate = useNavigate();
 
+  const [subprojectCount, setSubprojectCount] = useState(0);
+
+  useEffect(() => {
+    if (!groups.length) return;
+    const groupIds = groups.map(g => g.id);
+    supabase
+      .from('subprojects')
+      .select('id', { count: 'exact', head: true })
+      .in('group_id', groupIds)
+      .then(({ count }) => { if (count != null) setSubprojectCount(count); });
+  }, [groups]);
+
   const firstName = profile?.full_name?.split(' ')[0] ?? null;
   const recent = files.slice(0, 8);
-  const totalMB = files.reduce((s, f) => s + (f.size_bytes ?? 0), 0) / 1024 / 1024;
-  const sharedCount = files.filter((f) => f.group_id).length;
 
   async function handleDownload(file: FileItem) {
     try {
@@ -84,7 +96,7 @@ export default function Dashboard() {
       <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
 
         {/* ── Stat cards ── */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <StatCard
             num={files.length}
             label="Total files"
@@ -99,17 +111,11 @@ export default function Dashboard() {
             accentClass="bg-violet-400"
           />
           <StatCard
-            num={`${totalMB.toFixed(1)} MB`}
-            label="Storage used"
-            icon={<HardDrive size={20} strokeWidth={1.5} />}
+            num={subprojectCount}
+            label="Projects"
+            sub={subprojectCount > 0 ? 'total created' : null}
+            icon={<Layers size={20} strokeWidth={1.5} />}
             accentClass="bg-amber-400"
-          />
-          <StatCard
-            num={sharedCount}
-            label="Shared files"
-            sub={sharedCount > 0 ? 'across groups' : null}
-            icon={<Share2 size={20} strokeWidth={1.5} />}
-            accentClass="bg-emerald-400"
           />
         </div>
 

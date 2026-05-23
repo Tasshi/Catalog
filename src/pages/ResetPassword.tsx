@@ -116,30 +116,41 @@ export default function ResetPassword() {
   const [error, setError]           = useState('');
 
   useEffect(() => {
-    const hash   = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
+    async function init() {
+      const search = new URLSearchParams(window.location.search);
+      const hash   = new URLSearchParams(window.location.hash.substring(1));
 
-    const accessToken  = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type         = params.get('type');
-    const errorCode    = params.get('error_code');
+      // Error params appear in query string (PKCE) or hash (implicit)
+      const errorCode = search.get('error_code') || hash.get('error_code');
+      if (errorCode) { setPageState('expired'); return; }
 
-    if (errorCode) {
-      setPageState('expired');
-      return;
+      // ── PKCE flow (Supabase v2 default): ?code=… ───────────────────────────
+      const code = search.get('code');
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) { console.error('exchangeCodeForSession error:', error); setPageState('expired'); }
+        else        setPageState('ready');
+        return;
+      }
+
+      // ── Implicit / legacy flow: #access_token=…&type=recovery ─────────────
+      const accessToken  = hash.get('access_token');
+      const refreshToken = hash.get('refresh_token');
+      const type         = hash.get('type');
+
+      if (type === 'recovery' && accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (error) { console.error('setSession error:', error); setPageState('expired'); }
+        else        setPageState('ready');
+        return;
+      }
+
+      // ── Fallback: already has an active session ────────────────────────────
+      const { data: { session } } = await supabase.auth.getSession();
+      setPageState(session ? 'ready' : 'expired');
     }
 
-    if (type === 'recovery' && accessToken && refreshToken) {
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error }) => {
-          if (error) { console.error('setSession error:', error); setPageState('expired'); }
-          else        setPageState('ready');
-        });
-    } else {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setPageState(session ? 'ready' : 'expired');
-      });
-    }
+    void init();
   }, []);
 
   function validate(): string {
@@ -148,6 +159,11 @@ export default function ResetPassword() {
     }
     if (password !== confirm) return "Passwords don't match.";
     return '';
+  }
+
+  async function handleCancel() {
+    await supabase.auth.signOut();
+    navigate('/auth', { replace: true });
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -160,13 +176,19 @@ export default function ResetPassword() {
     const { error: updateError } = await supabase.auth.updateUser({ password });
 
     if (updateError) {
+      console.error('[ResetPassword] updateUser error:', updateError);
       setError(updateError.message);
       setSubmitting(false);
-    } else {
-      await supabase.auth.signOut();
-      setPageState('done');
-      setTimeout(() => navigate('/auth'), 3000);
+      return;
     }
+
+    // Sign out the recovery session so the user must log in with the new password
+    await supabase.auth.signOut();
+    setPageState('done');
+
+    // Navigate once auth state has cleared (SIGNED_OUT event fires synchronously
+    // after signOut(), so by the time this callback runs user is null in AuthContext)
+    setTimeout(() => navigate('/auth', { replace: true }), 2000);
   }
 
   const allRulesPass   = RULES.every(r => r.test(password));
@@ -272,6 +294,8 @@ export default function ResetPassword() {
                   placeholder="••••••••••"
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError(''); }}
+                  onCopy={e => e.preventDefault()}
+                  onCut={e => e.preventDefault()}
                   required
                   autoFocus
                 />
@@ -303,6 +327,8 @@ export default function ResetPassword() {
                   placeholder="••••••••••"
                   value={confirm}
                   onChange={e => { setConfirm(e.target.value); setError(''); }}
+                  onCopy={e => e.preventDefault()}
+                  onCut={e => e.preventDefault()}
                   required
                 />
                 <button
@@ -331,7 +357,7 @@ export default function ResetPassword() {
             <div className="flex gap-3 mt-1">
               <button
                 type="button"
-                onClick={() => navigate('/auth')}
+                onClick={handleCancel}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 active:bg-red-700 hover:-translate-y-px hover:shadow-lg transition-all duration-200 cursor-pointer border-0"
               >
                 Cancel

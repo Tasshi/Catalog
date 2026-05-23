@@ -6,72 +6,62 @@ interface GroupCardProps {
   onClick: (group: Group) => void;
 }
 
-// ── Palette — hashed from group.id so each group keeps a consistent color ─────
-
 function getPalette(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return PALETTES[h % PALETTES.length];
 }
 
-// ── FolderIcon ────────────────────────────────────────────────────────────────
-
 function FolderIcon({
   tab, body, fileCount, icon,
 }: { tab: string; body: string; fileCount: number; icon?: string }) {
   return (
-    <div style={{ position: 'relative', width: 96, height: 76, flexShrink: 0 }}>
+    <div style={{ position: 'relative', width: 88, height: 70, flexShrink: 0 }}>
       {/* Tab */}
       <div style={{
         position: 'absolute', top: 0, left: 0,
-        width: 40, height: 14,
+        width: 36, height: 13,
         borderRadius: '5px 5px 0 0',
         background: tab,
       }} />
-
       {/* Body */}
       <div style={{
-        position: 'absolute', top: 11, left: 0,
-        width: 96, height: 65,
+        position: 'absolute', top: 10, left: 0,
+        width: 88, height: 60,
         borderRadius: '3px 8px 8px 8px',
         background: body,
         overflow: 'hidden',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'flex-start', justifyContent: 'flex-end',
-        padding: '6px 8px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {/* Shine */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0,
-          height: 1, background: 'rgba(255,255,255,0.25)',
+          height: 1, background: 'rgba(255,255,255,0.3)',
         }} />
-
-        {/* Emoji icon centered */}
+        {/* Emoji */}
         <div style={{
-          position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%, -60%)',
           fontSize: 22, lineHeight: 1,
-          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+          filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.25))',
+          marginBottom: 6,
         }}>
           {icon ?? '📁'}
         </div>
-
         {/* File count badge */}
-        <div style={{
-          position: 'absolute', bottom: 6, right: 7,
-          fontSize: 10, fontWeight: 600,
-          color: 'rgba(255,255,255,0.85)',
-          background: 'rgba(0,0,0,0.28)',
-          borderRadius: 20, padding: '1px 6px',
-        }}>
-          {fileCount}
-        </div>
+        {fileCount > 0 && (
+          <div style={{
+            position: 'absolute', bottom: 5, right: 6,
+            fontSize: 10, fontWeight: 700,
+            color: '#fff',
+            background: 'rgba(0,0,0,0.22)',
+            borderRadius: 20, padding: '1px 6px',
+          }}>
+            {fileCount}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-// ── GroupCard ─────────────────────────────────────────────────────────────────
 
 export function GroupCard({ group, onClick }: GroupCardProps) {
   const { tab, body } = getPalette(group.id);
@@ -85,40 +75,45 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
         all: 'unset',
         display: 'flex',
         flexDirection: 'column',
-        gap: 20,
-        padding: '22px 24px',
-        background: '#0f1e30',
-        border: '1px solid #1e3248',
+        gap: 18,
+        padding: '20px 22px',
+        background: '#ffffff',
+        border: '1px solid #e8edf3',
         borderRadius: 16,
         cursor: 'pointer',
-        transition: 'border-color 0.15s, background 0.15s',
+        transition: 'box-shadow 0.18s, border-color 0.18s, transform 0.18s',
         width: '100%',
         boxSizing: 'border-box',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
       }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLButtonElement).style.background = '#162840';
-        (e.currentTarget as HTMLButtonElement).style.borderColor = '#2e4a6a';
+        const el = e.currentTarget as HTMLButtonElement;
+        el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.10)';
+        el.style.borderColor = '#d0dae4';
+        el.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.background = '#0f1e30';
-        (e.currentTarget as HTMLButtonElement).style.borderColor = '#1e3248';
+        const el = e.currentTarget as HTMLButtonElement;
+        el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
+        el.style.borderColor = '#e8edf3';
+        el.style.transform = 'translateY(0)';
       }}
     >
-      {/* Top: folder icon + name + desc */}
+      {/* Top row: folder icon + name + description */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <FolderIcon tab={tab} body={body} fileCount={fileCount} icon={group.icon} />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flex: 1 }}>
           <span style={{
-            fontSize: 20, fontWeight: 600, color: '#e8f0fe',
-            lineHeight: 1.2, letterSpacing: '-0.01em',
+            fontSize: 17, fontWeight: 700, color: '#0f172a',
+            lineHeight: 1.25, letterSpacing: '-0.01em',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {group.name}
           </span>
           {group.description && (
             <span style={{
-              fontSize: 14, color: '#5a7898', lineHeight: 1.4,
+              fontSize: 13, color: '#94a3b8', lineHeight: 1.4,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
               {group.description}
@@ -127,19 +122,22 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
         </div>
       </div>
 
-      {/* Bottom: members pill + Active badge */}
+      {/* Divider */}
+      <div style={{ height: 1, background: '#f1f5f9', margin: '0 -2px' }} />
+
+      {/* Bottom row: members pill + Active badge */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{
-          fontSize: 13, fontWeight: 500, color: '#5b8fd4',
-          background: '#0e2040', border: '1px solid #1a3a60',
-          padding: '5px 14px', borderRadius: 20,
+          fontSize: 12, fontWeight: 500, color: '#64748b',
+          background: '#f1f5f9', border: '1px solid #e2e8f0',
+          padding: '4px 12px', borderRadius: 20,
         }}>
           {memberCount} member{memberCount !== 1 ? 's' : ''}
         </span>
         <span style={{
-          fontSize: 13, fontWeight: 600, color: '#2ecc71',
-          background: '#0a2a18', border: '1px solid #1a4a28',
-          padding: '5px 14px', borderRadius: 20,
+          fontSize: 12, fontWeight: 600, color: '#16a34a',
+          background: '#f0fdf4', border: '1px solid #bbf7d0',
+          padding: '4px 12px', borderRadius: 20,
         }}>
           Active
         </span>

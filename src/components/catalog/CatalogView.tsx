@@ -279,9 +279,6 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
   const [viewMode, setViewMode]     = useState<ViewMode>('table');
 
   // ── Pagination state ─────────────────────────────────────────────────────────
-  // Bundle the page number together with the filter key it was set for.
-  // When filters change, the key won't match and we fall back to page 1 —
-  // no effect, no ref, no render-time setState.
   const filterKey = `${search}|${activeType}|${sortBy}`;
   const [pagination, setPagination] = useState({ filterKey, page: 1, pageSize: 20 });
 
@@ -341,11 +338,13 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
+  // ✅ CHANGED: navigate to ProjectDetail (/groups/:groupId) with openFolderId
+  // instead of SubfoldersView (/catalog/:fileId/subfolders)
   const handleView = useCallback(
     (file: FileItem) => {
       logAction(file.id, 'view');
-      navigate(`/catalog/${file.id}/subfolders`, {
-        state: { fileId: file.id, groupId: file.group_id },
+      navigate(`/groups/${file.group_id}`, {
+        state: { openFolderId: file.folder_id },
       });
     },
     [logAction, navigate],
@@ -491,8 +490,6 @@ export default function CatalogView({ groupId }: CatalogViewProps) {
 
       ) : (
 
-        // NOTE: .file-grid must be in index.css:
-        //   .file-grid { grid-template-columns: repeat(auto-fill, minmax(192px, 1fr)); }
         <>
           <div className={styles.grid} aria-label="File grid">
             {paginated.map(f => (

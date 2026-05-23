@@ -61,9 +61,10 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
         <div className="flex items-center gap-2.5">
           <div
             className="w-8 h-8 rounded-[6px] flex items-center justify-center text-base flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #533AFD, #FF6118)' }}
+            // style={{ background: 'linear-gradient(135deg, #533AFD, #FF6118)' }} 
+            
           >
-            🗄
+            <img src="/src/assets/Logo.png" alt="react logo" style={{ width: '400px' }} />
           </div>
           <div>
             <div className="text-base font-normal leading-[18.4px] text-slate-900">Pelsung</div>

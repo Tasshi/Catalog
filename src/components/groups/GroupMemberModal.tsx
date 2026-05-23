@@ -139,19 +139,43 @@ interface GroupMemberModalProps {
   onClose: () => void;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateEmail(value: string, members: GroupMember[]): string {
+  const v = value.trim();
+  if (!v)                                                      return 'Email is required.';
+  if (!EMAIL_RE.test(v))                                       return 'Enter a valid email address.';
+  if (members.some(m => m.profile?.email?.toLowerCase() === v.toLowerCase()))
+                                                               return 'This member is already in the group.';
+  return '';
+}
+
 export default function GroupMemberModal({ group, open, onClose }: GroupMemberModalProps) {
   const { members, removeMember} = useGroupMembers(group?.id ?? null);
   const { showToast } = useApp();
-  const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState('viewer');
+  const [newEmail,  setNewEmail]  = useState('');
+  const [newRole,   setNewRole]   = useState('viewer');
+  const [touched,   setTouched]   = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const emailError = touched ? validateEmail(newEmail, members) : '';
+  const isValid    = validateEmail(newEmail, members) === '';
+
+  function handleChange(v: string) {
+    setNewEmail(v);
+    if (!touched && v) setTouched(true);
+  }
 
   async function handleAdd() {
-    if (!newEmail.trim()) return;
+    setTouched(true);
+    if (!isValid) return;
+    setSubmitting(true);
     try {
-      // In production, you'd look up user by email first
-      showToast(`Invite sent to ${newEmail}`);
+      showToast(`Invite sent to ${newEmail.trim()}`);
       setNewEmail('');
+      setTouched(false);
     } catch { showToast('Failed to add member', 'error'); }
+    finally { setSubmitting(false); }
   }
 
   async function handleRemove(member: GroupMember) {  // ✅ use GroupMember directly
@@ -218,14 +242,25 @@ export default function GroupMemberModal({ group, open, onClose }: GroupMemberMo
         <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text3)' }}>
           Invite Member
         </div>
-        <div className="flex gap-2">
-          <input
-            className="form-input flex-1"
-            placeholder="Email address…"
-            value={newEmail}
-            onChange={e => setNewEmail(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
-          />
+        <div className="flex gap-2 items-start">
+          <div className="flex-1 flex flex-col gap-1">
+            <input
+              className="form-input"
+              placeholder="Email address…"
+              type="email"
+              value={newEmail}
+              onChange={e => handleChange(e.target.value)}
+              onBlur={() => setTouched(true)}
+              onKeyDown={e => e.key === 'Enter' && void handleAdd()}
+              style={emailError ? { borderColor: '#f87171', outline: 'none' } : {}}
+              aria-invalid={!!emailError}
+            />
+            {emailError && (
+              <span className="text-[11px] font-medium" style={{ color: '#f87171' }}>
+                {emailError}
+              </span>
+            )}
+          </div>
           <select
             className="form-input"
             style={{ width: 100 }}
@@ -236,7 +271,13 @@ export default function GroupMemberModal({ group, open, onClose }: GroupMemberMo
             <option value="editor">Editor</option>
             <option value="owner">Owner</option>
           </select>
-          <Button variant="primary" onClick={handleAdd}>Invite</Button>
+          <Button
+            variant="primary"
+            onClick={() => void handleAdd()}
+            disabled={submitting}
+          >
+            {submitting ? 'Inviting…' : 'Invite'}
+          </Button>
         </div>
       </div>
     </Modal>

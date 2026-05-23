@@ -226,6 +226,8 @@ function Field({ label, value, onChange, show, toggleShow, placeholder, status }
           type={show ? 'text' : 'password'}
           value={value}
           onChange={e => onChange(e.target.value)}
+          onCopy={e => e.preventDefault()}
+          onCut={e => e.preventDefault()}
           placeholder={placeholder}
           className="flex-1 text-sm text-slate-800 bg-transparent border-none outline-none placeholder:text-slate-300"
           autoComplete="new-password"

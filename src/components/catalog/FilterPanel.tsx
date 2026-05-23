@@ -41,15 +41,13 @@ export default function FilterPanel({
               onClick={() => onTypeChange(t)}
               aria-pressed={isActive}
               className={[
-                // base
-                'inline-flex items-center h-8 px-3 rounded text-xs font-medium',
-                'border transition-all duration-150 select-none',
-                // active  → filled purple (primary CTA style, scaled down)
+                'inline-flex items-center h-8 px-4 rounded-full text-xs font-semibold',
+                'border transition-all duration-150 select-none cursor-pointer',
                 isActive
-                  ? 'bg-[#533AFD] text-white border-[#533AFD] shadow-[0px_1px_2px_rgba(83,58,253,0.25)]'
-                  // inactive → ghost outline
-                  : 'bg-white text-[#64748D] border-[#D4DEE9] hover:border-[#533AFD] hover:text-[#533AFD] hover:bg-[#F3F0FF]',
+                  ? 'text-white border-transparent shadow-md'
+                  : 'bg-white text-[#64748D] border-[#D4DEE9] hover:border-[#FF9A00] hover:text-[#FF6B00]',
               ].join(' ')}
+              style={isActive ? { background: 'linear-gradient(to right, #FF9A00, #FF6B00, #E85500)', boxShadow: '0 4px 12px rgba(255,100,0,0.35)' } : {}}
             >
               {t}
             </button>
@@ -76,7 +74,7 @@ export default function FilterPanel({
               'shadow-[0px_1px_2px_rgba(0,0,0,0.04)]',
               'outline-none cursor-pointer',
               'hover:border-[#B8CCDB]',
-              'focus:border-[#533AFD] focus:shadow-[0px_0px_0px_3px_rgba(83,58,253,0.1)]',
+              'focus:border-[#FF6B00] focus:shadow-[0px_0px_0px_3px_rgba(255,107,0,0.12)]',
               'transition-all duration-150',
             ].join(' ')}
           >

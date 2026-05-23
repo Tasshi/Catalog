@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import Header from '../components/layout/Header';
 import GroupMemberModal from '../components/groups/GroupMemberModal';
@@ -6,9 +7,10 @@ import CreateGroupModal from '../components/groups/CreateGroupModal';
 import { GroupCard } from '../components/groups/GroupCard';
 import GroupDetail from '../components/groups/GroupDetail';
 import { Button } from '../components/layout/ui/index';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { useGroups } from '../hooks/useGroups';
 import { usePermissions } from '../hooks/Usepermissions';
+import { useAuth } from '../contexts/AuthContext';
 import type { Group } from '../components/layout/ui/cons';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -18,22 +20,32 @@ const pillBase = [
   'transition-all duration-150 cursor-pointer border whitespace-nowrap',
 ].join(' ');
 
-const pillActive   = 'bg-indigo-500 text-white border-indigo-500 shadow-sm';
+const pillActive   = 'text-white border-transparent shadow-md [background:linear-gradient(to_right,#FF9A00,#FF6B00,#E85500)] [box-shadow:0_4px_12px_rgba(255,100,0,0.35)]';
 const pillInactive = 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Groups() {
-  const [createOpen,    setCreateOpen]    = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [membersOpen,   setMembersOpen]   = useState(false);
-  const [filterGroupId, setFilterGroupId] = useState<string | null>(null);
-  const [searchQuery,   setSearchQuery]   = useState('');
+  const navigate = useNavigate();
+
+  const [createOpen,        setCreateOpen]        = useState(false);
+  const [selectedGroup,     setSelectedGroup]     = useState<Group | null>(null);
+  const [membersOpen,       setMembersOpen]       = useState(false);
+  const [filterGroupId,     setFilterGroupId]     = useState<string | null>(null);
+  const [searchQuery,       setSearchQuery]       = useState('');
+  const [cohortDismissed,   setCohortDismissed]   = useState(false);
   const { groups, loading } = useGroups();
   const { canManageGroups } = usePermissions();
+  const { profile }         = useAuth();
+
+  const noCohort = !cohortDismissed && !profile?.cohort;
 
   function handleSelectGroup(group: Group | null) {
-    setSelectedGroup(group);
+    if (group) {
+      navigate(`/groups/${group.id}`);
+    } else {
+      setSelectedGroup(null);
+    }
   }
 
   // Filter by pill selection AND search query
@@ -219,6 +231,37 @@ export default function Groups() {
           open={membersOpen}
           onClose={() => setMembersOpen(false)}
         />
+      )}
+
+      {/* No-cohort banner — non-blocking, sits above content */}
+      {noCohort && (
+        <div
+          className="fixed bottom-6 left-1/2 z-50 flex items-center gap-4 px-5 py-4 bg-white rounded-2xl shadow-2xl border border-amber-100"
+          style={{ transform: 'translateX(-50%)', minWidth: 340, maxWidth: 480, animation: 'cohortSlideUp 0.22s ease-out' }}
+        >
+          <style>{`@keyframes cohortSlideUp { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }`}</style>
+          <span className="text-2xl shrink-0">😅</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-slate-900">Oops! No cohort selected</p>
+            <p className="text-[12px] text-slate-500 mt-0.5 leading-relaxed">
+              Please choose your cohort in Settings to upload or manage files.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate('/settings')}
+              className="h-8 px-3 rounded-lg text-[12px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700 border-0 cursor-pointer transition-colors whitespace-nowrap"
+            >
+              Go to Settings
+            </button>
+            <button
+              onClick={() => setCohortDismissed(true)}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 hover:bg-slate-200 border-0 cursor-pointer"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        </div>
       )}
     </Layout>
   );

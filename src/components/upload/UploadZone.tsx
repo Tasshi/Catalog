@@ -1,8 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { CloudUpload, X, FileText } from 'lucide-react';
+import { CloudUpload, X, FileText, AlertTriangle } from 'lucide-react';
 import { getFileConfig, getFileExtension } from '../../lib/metadata';
 import { formatBytes } from '../../lib/storage';
+
+const MAX_SIZE = 4 * 1024 * 1024; // 4 MB
 
 interface UploadZoneProps {
   files:           File[];
@@ -12,14 +14,24 @@ interface UploadZoneProps {
 }
 
 export default function UploadZone({ files, onFilesSelected, onRemove, onClear }: UploadZoneProps) {
+  const [oversized, setOversized] = useState<{ name: string; size: number }[]>([]);
 
   const onDrop = useCallback((accepted: File[]) => {
     if (accepted.length) onFilesSelected(accepted);
   }, [onFilesSelected]);
 
+  const onDropRejected = useCallback((rejected: import('react-dropzone').FileRejection[]) => {
+    const tooBig = rejected
+      .filter(r => r.errors.some(e => e.code === 'file-too-large'))
+      .map(r => ({ name: r.file.name, size: r.file.size }));
+    if (tooBig.length) setOversized(tooBig);
+  }, []);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     multiple: true,
+    maxSize: MAX_SIZE,
     accept: {
       'application/pdf': ['.pdf'],
       'application/msword': ['.doc'],
@@ -128,6 +140,9 @@ export default function UploadZone({ files, onFilesSelected, onRemove, onClear }
             {isDragActive ? 'Drop to add' : 'Drop more files here'}
           </span>
         </div>
+
+        {/* Oversized file popup (file-list view) */}
+        {oversized.length > 0 && <OversizedModal files={oversized} onClose={() => setOversized([])} />}
       </div>
     );
   }
@@ -166,6 +181,87 @@ export default function UploadZone({ files, onFilesSelected, onRemove, onClear }
           </span>
         ))}
       </div>
+      <p className="text-xs mt-1" style={{ color: 'var(--text3)', opacity: 0.7 }}>
+        Max file size: <strong style={{ color: 'var(--text)' }}>4 MB</strong>
+      </p>
+
+      {/* Oversized file popup */}
+      {oversized.length > 0 && <OversizedModal files={oversized} onClose={() => setOversized([])} />}
     </div>
+  );
+}
+
+// ── Oversized popup ────────────────────────────────────────────────────────────
+
+function OversizedModal({ files, onClose }: { files: { name: string; size: number }[]; onClose: () => void }) {
+  return (
+    <>
+      <style>{`@keyframes szPop { from { transform: translate(-50%,-50%) scale(0.94); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }`}</style>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[80] bg-black/50"
+        style={{ backdropFilter: 'blur(4px)' }}
+        onClick={onClose}
+      />
+      {/* Card */}
+      <div
+        className="fixed z-[90] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '100%', maxWidth: 400,
+          animation: 'szPop 0.18s ease-out',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 pt-6 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+              <AlertTriangle size={18} className="text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-900">File too large</h3>
+              <p className="text-[12px] text-slate-400 mt-0.5">Maximum allowed size is 4 MB</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 hover:bg-slate-200 border-0 cursor-pointer shrink-0"
+          >
+            <X size={13} />
+          </button>
+        </div>
+
+        {/* File list */}
+        <div className="px-6 pb-2 flex flex-col gap-2 max-h-48 overflow-y-auto">
+          {files.map(f => (
+            <div
+              key={f.name}
+              className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg"
+              style={{ background: '#fef2f2', border: '1px solid #fecaca' }}
+            >
+              <span className="text-[13px] font-medium text-slate-700 truncate">{f.name}</span>
+              <span className="text-[11px] font-semibold text-red-500 shrink-0 tabular-nums">
+                {formatBytes(f.size)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Message + action */}
+        <div className="px-6 py-5">
+          <p className="text-[13px] text-slate-500 mb-4 leading-relaxed">
+            Please upload files under <strong className="text-slate-700">4 MB</strong>. Compress or resize the file and try again.
+          </p>
+          <button
+            onClick={onClose}
+            className="w-full h-10 rounded-xl text-[13px] font-semibold text-white bg-red-500 hover:bg-red-600 border-0 cursor-pointer transition-colors"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

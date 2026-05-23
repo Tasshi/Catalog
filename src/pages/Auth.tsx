@@ -1,7 +1,8 @@
 import { useState, useTransition } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import bgImage from '../assets/airport-dark-bg.webp';
+import bgImage from '../assets/gelephu-bg.jpg';
+import logoImage from '../assets/Logo.png';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
@@ -86,25 +87,38 @@ function IconCheck() {
   );
 }
 
+const btnCls =
+  'w-full py-3 rounded-xl text-sm font-bold text-white tracking-wide cursor-pointer ' +
+  'transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed ' +
+  'bg-gradient-to-r from-[#FF9A00] via-[#FF6B00] to-[#E85500] ' +
+  'hover:from-[#FFB020] hover:via-[#FF8020] hover:to-[#FF5500] ' +
+  'active:from-[#E58800] active:to-[#CC4400] ' +
+  'hover:-translate-y-px ' +
+  '[border:2px_solid_rgba(255,255,255,0.5)] ' +
+  'hover:[border-color:rgba(255,255,255,0.85)] ' +
+  'shadow-[0_4px_18px_rgba(255,100,0,0.35)] ' +
+  'hover:shadow-[0_8px_28px_rgba(255,120,0,0.45),0_0_12px_rgba(255,255,255,0.2)]';
+
 const inputCls =
-  'w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 ' +
-  'text-slate-800 text-sm placeholder:text-slate-400 outline-none ' +
-  'transition-all duration-200 focus:border-blue-500 focus:bg-white ' +
-  'focus:ring-2 focus:ring-blue-500/10';
+  'w-full pl-9 pr-4 py-2.5 rounded-xl ' +
+  'text-white text-sm placeholder:text-white/45 outline-none ' +
+  'transition-all duration-200 ' +
+  '[border:2px_solid_rgba(255,255,255,0.45)] [background:rgba(255,255,255,0.12)] ' +
+  'focus:[border-color:rgba(255,255,255,0.9)] focus:[background:rgba(255,255,255,0.18)] ' +
+  'focus:[box-shadow:0_0_0_3px_rgba(255,255,255,0.15),0_0_10px_rgba(255,255,255,0.15)]';
 
 const REMEMBER_KEY = 'pelsung_remembered_email';
 
-// ── Password rules ────────────────────────────────────────────────────────────
 interface PasswordRule {
   label: string;
   test:  (pw: string) => boolean;
 }
 
 const PASSWORD_RULES: PasswordRule[] = [
-  { label: 'At least 8 characters',        test: pw => pw.length >= 8 },
-  { label: 'One uppercase letter (A–Z)',    test: pw => /[A-Z]/.test(pw) },
-  { label: 'One number (0–9)',              test: pw => /[0-9]/.test(pw) },
-  { label: 'One special character (!@#…)',  test: pw => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw) },
+  { label: 'At least 8 characters',       test: pw => pw.length >= 8 },
+  { label: 'One uppercase letter (A–Z)',   test: pw => /[A-Z]/.test(pw) },
+  { label: 'One number (0–9)',             test: pw => /[0-9]/.test(pw) },
+  { label: 'One special character (!@#…)', test: pw => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw) },
 ];
 
 function validatePassword(pw: string): string | null {
@@ -115,16 +129,22 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
-function friendlyError(raw: string): string {
-  const msg = raw.toLowerCase();
-  if (msg.includes('user already registered') || msg.includes('already registered') || msg.includes('already exists')) return 'An account with this email already exists.';
-  if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) return 'Incorrect email or password.';
-  if (msg.includes('email not confirmed')) return 'Please confirm your email before signing in.';
-  if (msg.includes('password should be at least')) return 'Password must be at least 8 characters.';
+function friendlyError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err ?? 'Something went wrong');
+  const code = (err as { code?: string }).code ?? '';
+  const msg  = raw.toLowerCase();
+
+  if (code === 'email_not_confirmed' || msg.includes('email not confirmed'))
+    return 'Please confirm your email before signing in.';
+  if (msg.includes('user already registered') || msg.includes('already registered') || msg.includes('already exists'))
+    return 'An account with this email already exists.';
+  if (code === 'invalid_credentials' || msg.includes('invalid login credentials') || msg.includes('invalid credentials'))
+    return 'Incorrect email or password.';
+  if (msg.includes('password should be at least'))
+    return 'Password must be at least 8 characters.';
   return raw;
 }
 
-// ── Password strength meter ───────────────────────────────────────────────────
 function PasswordStrength({ password }: { password: string }) {
   if (!password) return null;
   const passed = PASSWORD_RULES.filter(r => r.test(password)).length;
@@ -135,7 +155,6 @@ function PasswordStrength({ password }: { password: string }) {
 
   return (
     <div style={{ marginTop: 8 }}>
-      {/* Bar — 4 segments for 4 rules */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
         {[0,1,2,3].map(i => (
           <div key={i} style={{
@@ -145,7 +164,6 @@ function PasswordStrength({ password }: { password: string }) {
           }} />
         ))}
       </div>
-      {/* Rules checklist */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {PASSWORD_RULES.map((rule, i) => {
           const ok = rule.test(password);
@@ -159,7 +177,7 @@ function PasswordStrength({ password }: { password: string }) {
               }}>
                 {ok && <IconCheck />}
               </div>
-              <span style={{ fontSize: 11.5, color: ok ? '#15803d' : '#94a3b8', transition: 'color 0.2s' }}>
+              <span style={{ fontSize: 11.5, color: ok ? '#4ade80' : 'rgba(255,255,255,0.35)', transition: 'color 0.2s' }}>
                 {rule.label}
               </span>
             </div>
@@ -167,7 +185,7 @@ function PasswordStrength({ password }: { password: string }) {
         })}
       </div>
       {password.length > 0 && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: color, marginTop: 6, textAlign: 'right', transition: 'color 0.25s' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color, marginTop: 6, textAlign: 'right', transition: 'color 0.25s' }}>
           {label}
         </div>
       )}
@@ -176,27 +194,44 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function Auth() {
-  const { signIn, signUp, signInWithGoogle, resetPassword, user, loading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, resendConfirmationEmail, user, loading } = useAuth();
   const navigate = useNavigate();
   const [isPending, startTransition] = useTransition();
 
-  const [mode, setMode]               = useState<Mode>('signin');
-  const [email, setEmail]             = useState(() => localStorage.getItem(REMEMBER_KEY) ?? '');
-  const [password, setPassword]       = useState('');
-  const [name, setName]               = useState('');
-  const [phone, setPhone]             = useState('');
-  const [error, setError]             = useState('');
-  const [formLoading, setFormLoading] = useState(false);
-  const [showPass, setShowPass]       = useState(false);
+  const [mode, setMode]                   = useState<Mode>('signin');
+  const [email, setEmail]                 = useState(() => localStorage.getItem(REMEMBER_KEY) ?? '');
+  const [password, setPassword]           = useState('');
+  const [name, setName]                   = useState('');
+  const [phone, setPhone]                 = useState('');
+  const [error, setError]                 = useState('');
+  const [formLoading, setFormLoading]     = useState(false);
+  const [showPass, setShowPass]           = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
-  const [rememberMe, setRememberMe]   = useState(() => !!localStorage.getItem(REMEMBER_KEY));
+  const [rememberMe, setRememberMe]       = useState(() => !!localStorage.getItem(REMEMBER_KEY));
 
   const [forgotEmail, setForgotEmail]     = useState('');
   const [forgotSent, setForgotSent]       = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError]     = useState('');
 
-  // redirect if already logged in
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent]       = useState(false);
+  const [showConfirmHint, setShowConfirmHint] = useState(false);
+
+  async function handleResend() {
+    if (!email || resendLoading) return;
+    setResendLoading(true);
+    try {
+      await resendConfirmationEmail(email);
+      setResendSent(true);
+    } catch {
+      // silently ignore — Supabase may throttle, that's fine
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
+  // Redirect if already logged in
   if (!loading && !isPending && user) {
     startTransition(() => navigate('/catalog'));
     return null;
@@ -207,7 +242,6 @@ export default function Auth() {
     e.preventDefault();
     setError('');
 
-    // Extra password validation on signup
     if (mode === 'signup') {
       const pwErr = validatePassword(password);
       if (pwErr) { setError(pwErr); return; }
@@ -221,15 +255,30 @@ export default function Auth() {
         else            localStorage.removeItem(REMEMBER_KEY);
         startTransition(() => navigate('/catalog'));
       } else {
-        // Pass phone as metadata so AuthContext / signUp can store it
-        await signUp(email, password, name, phone || undefined);
-        setName(''); setPassword(''); setPhone('');
-        setSignupSuccess(true);
-        setMode('signin');
+        const { needsConfirmation } = await signUp(email, password, name, phone || undefined);
+        setName('');
+        setPassword('');
+        setPhone('');
+        if (needsConfirmation) {
+          // Email confirmation ON — show message and stay on sign in tab
+          setSignupSuccess(true);
+          setMode('signin');
+        } else {
+          // Email confirmation OFF — go straight to app
+          startTransition(() => navigate('/catalog'));
+        }
       }
     } catch (err) {
-      const raw = err instanceof Error ? err.message : 'Something went wrong';
-      setError(friendlyError(raw));
+      const code = (err as { code?: string }).code ?? '';
+      const msg  = (err instanceof Error ? err.message : '').toLowerCase();
+      const isCredentialError = code === 'invalid_credentials' || msg.includes('invalid login credentials');
+      if (mode === 'signin' && isCredentialError) {
+        setShowConfirmHint(true);
+        setError('Incorrect email or password. If you have a new account, confirm your email first.');
+      } else {
+        setShowConfirmHint(false);
+        setError(friendlyError(err));
+      }
     } finally {
       setFormLoading(false);
     }
@@ -242,8 +291,7 @@ export default function Auth() {
       await signInWithGoogle();
       startTransition(() => navigate('/catalog'));
     } catch (err) {
-      const raw = err instanceof Error ? err.message : 'Google sign-in failed';
-      setError(friendlyError(raw));
+      setError(friendlyError(err));
     } finally {
       setFormLoading(false);
     }
@@ -257,97 +305,164 @@ export default function Auth() {
       await resetPassword(forgotEmail);
       setForgotSent(true);
     } catch (err) {
-      const raw = err instanceof Error ? err.message : 'Failed to send reset email';
-      setForgotError(friendlyError(raw));
+      setForgotError(friendlyError(err));
     } finally {
       setForgotLoading(false);
     }
   }
 
   function openForgot() {
-    setForgotEmail(email); setForgotSent(false);
-    setForgotError(''); setMode('forgot');
+    setForgotEmail(email);
+    setForgotSent(false);
+    setForgotError('');
+    setMode('forgot');
   }
 
   function backToSignIn() {
-    setMode('signin'); setForgotSent(false);
-    setForgotError(''); setError('');
+    setMode('signin');
+    setForgotSent(false);
+    setForgotError('');
+    setError('');
+  }
+
+  function switchMode(m: Mode) {
+    setMode(m);
+    setError('');
+    setSignupSuccess(false);
+    setShowConfirmHint(false);
+    setResendSent(false);
   }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden">
 
-      {/* Background */}
-      <div className="fixed inset-0 z-0 overflow-hidden brightness-50">
-        <img src={bgImage} alt="" className="w-full h-full object-cover" />
+      {/* Cinematic keyframes */}
+      <style>{`
+        @keyframes cinematicZoom {
+          from { transform: scale(0.92); }
+          to   { transform: scale(1.04); }
+        }
+        @keyframes dustFade {
+          0%   { opacity: 0; }
+          20%  { opacity: 1; }
+          80%  { opacity: 1; }
+          100% { opacity: 0.85; }
+        }
+      `}</style>
+
+      {/* Background — full building cinematic */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        {/* Building image — zooms slowly inward, sky visible */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: '-4%',
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: '90%',
+            backgroundPosition: 'center 12%',
+            backgroundRepeat: 'no-repeat',
+            filter: 'brightness(0.85) saturate(1.35) sepia(0.1) contrast(1.05)',
+            animation: 'cinematicZoom 16s ease-out forwards',
+            transformOrigin: 'center 35%',
+          }}
+        />
+
+        {/* Warm amber glow from building lights */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse 70% 55% at 50% 58%, rgba(255,160,50,0.22) 0%, rgba(200,100,10,0.1) 45%, transparent 70%)',
+          animation: 'dustFade 16s ease-out forwards',
+        }} />
+
+        {/* Soft vignette — pulls focus to building */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse 90% 85% at 50% 50%, transparent 25%, rgba(0,0,0,0.38) 70%, rgba(0,0,0,0.65) 100%)',
+        }} />
+
+        {/* Sky gradient top fade */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, rgba(10,5,20,0.38) 0%, transparent 28%, transparent 72%, rgba(5,2,10,0.42) 100%)',
+        }} />
+
+        {/* Subtle warm shimmer */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(108deg, transparent 25%, rgba(255,185,70,0.05) 50%, transparent 72%)',
+        }} />
       </div>
-      <div className="fixed inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />
 
       <div className="relative z-[2] w-full max-w-[440px]">
 
         {/* Header */}
         <div className="text-center mb-7">
-          <div className="w-[52px] h-[52px] rounded-2xl bg-gradient-to-br from-blue-600 to-sky-400 flex items-center justify-center text-xl mx-auto mb-3.5 shadow-[0_8px_32px_rgba(37,99,235,0.4)]">
-            🗄
+          <div className="w-[80px] h-[80px] rounded-full mx-auto mb-3.5 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_3px_rgba(255,255,255,0.25)]">
+            <img src={logoImage} alt="Pelsung Portal" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-[30px] font-semibold text-white tracking-tight drop-shadow-lg mb-1 font-serif">
             Pelsung Portal
           </h1>
-          <p className="text-[13px] text-white/60 font-light tracking-wide">
+          <p className="text-[13px] text-white/55 font-light tracking-wide">
             Secure file repository &amp; collaboration
           </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-[18px] px-8 pt-7 pb-7 shadow-[0_32px_64px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.2)]">
+        {/* Card — bright glass */}
+        <div
+          className="backdrop-blur-2xl rounded-[22px] px-8 pt-7 pb-7"
+          style={{
+            background: 'linear-gradient(160deg, rgba(255,255,255,0.22) 0%, rgba(255,240,210,0.14) 100%)',
+            border: '1px solid rgba(255,255,255,0.35)',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.5)',
+          }}
+        >
 
           {/* ── FORGOT PASSWORD ── */}
           {mode === 'forgot' ? (
             <div>
               <button type="button" onClick={backToSignIn}
-                className="flex items-center gap-1.5 text-[12px] text-slate-500 hover:text-slate-800 transition-colors mb-5 bg-transparent border-0 cursor-pointer p-0">
+                className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white/80 transition-colors mb-5 bg-transparent border-0 cursor-pointer p-0">
                 <IconArrowLeft /> Back to Sign In
               </button>
 
               {forgotSent ? (
                 <div className="text-center py-2">
-                  <div className="w-14 h-14 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mx-auto mb-4">
-                    <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="text-green-500">
+                  <div className="w-14 h-14 rounded-full bg-green-400/12 border border-green-400/25 flex items-center justify-center mx-auto mb-4">
+                    <svg width="26" height="26" fill="none" stroke="#4ade80" strokeWidth="1.5" viewBox="0 0 24 24">
                       <rect x="2" y="4" width="20" height="16" rx="2"/>
                       <path d="m2 7 10 7 10-7"/>
-                      <path stroke="#22c55e" strokeWidth="2.2" d="M8 12.5l2.5 2.5 5-5"/>
+                      <path stroke="#4ade80" strokeWidth="2.2" d="M8 12.5l2.5 2.5 5-5"/>
                     </svg>
                   </div>
-                  <h2 className="text-[17px] font-semibold text-slate-800 mb-2">Check your inbox</h2>
-                  <p className="text-[13px] text-slate-500 leading-relaxed mb-6">
+                  <h2 className="text-[17px] font-semibold text-white mb-2">Check your inbox</h2>
+                  <p className="text-[13px] text-white/50 leading-relaxed mb-6">
                     A password reset link was sent to{' '}
-                    <span className="font-medium text-slate-700">{forgotEmail}</span>.
+                    <span className="font-medium text-white/80">{forgotEmail}</span>.
                   </p>
-                  <button type="button" onClick={backToSignIn}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-all duration-200 cursor-pointer border-0">
+                  <button type="button" onClick={backToSignIn} className={btnCls}>
                     Back to Sign In
                   </button>
                 </div>
               ) : (
                 <>
-                  <h2 className="text-[17px] font-semibold text-slate-800 mb-1">Forgot password?</h2>
-                  <p className="text-[12.5px] text-slate-500 mb-5 leading-relaxed">
+                  <h2 className="text-[17px] font-semibold text-white mb-1">Forgot password?</h2>
+                  <p className="text-[12.5px] text-white/50 mb-5 leading-relaxed">
                     Enter your account email and we'll send you a reset link.
                   </p>
                   <form onSubmit={handleForgotSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Email</label>
+                      <label className="text-[11px] font-medium text-white/55 uppercase tracking-wide">Email</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex"><IconMail /></span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none flex"><IconMail /></span>
                         <input className={inputCls} type="email" placeholder="you@example.com"
                           value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required autoFocus />
                       </div>
                     </div>
                     {forgotError && (
-                      <div className="text-[12.5px] px-3.5 py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200">{forgotError}</div>
+                      <div className="text-[12.5px] px-3.5 py-2.5 rounded-xl bg-red-500/12 text-red-300 border border-red-400/25">{forgotError}</div>
                     )}
-                    <button type="submit" disabled={forgotLoading}
-                      className="w-full py-3 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 active:bg-gray-950 hover:-translate-y-px hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed tracking-wide cursor-pointer border-0">
+                    <button type="submit" disabled={forgotLoading} className={btnCls}>
                       {forgotLoading ? 'Sending…' : 'Send Reset Link'}
                     </button>
                   </form>
@@ -358,23 +473,36 @@ export default function Auth() {
           ) : (
             <>
               {/* ── TABS ── */}
-              <div className="flex border-b border-slate-200 mb-6">
+              <div className="flex mb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.25)' }}>
                 {([['signin', 'Sign In'], ['signup', 'Create Account']] as [Mode, string][]).map(([v, l]) => (
                   <button key={v} type="button"
-                    onClick={() => { setMode(v); setError(''); setSignupSuccess(false); }}
+                    onClick={() => switchMode(v as Mode)}
                     className={[
                       'pb-3 mr-5 text-sm font-medium bg-transparent border-0 cursor-pointer',
                       'transition-all duration-200 -mb-px border-b-2',
-                      mode === v ? 'text-slate-900 border-blue-600' : 'text-slate-400 border-transparent hover:text-slate-600',
+                      mode === v
+                        ? 'text-white border-amber-400'
+                        : 'text-white/40 border-transparent hover:text-white/70',
                     ].join(' ')}>
                     {l}
                   </button>
                 ))}
               </div>
 
+              {/* Dynamic status banner */}
               {signupSuccess && mode === 'signin' && (
-                <div className="text-[12.5px] px-3.5 py-2.5 rounded-xl bg-green-50 text-green-700 border border-green-200 mb-4">
+                <div className="text-[12.5px] px-3.5 py-2.5 rounded-xl bg-green-400/10 text-green-300 border border-green-400/25 mb-4">
                   ✓ Account created! Please check your email to confirm, then sign in.
+                  <div className="mt-1.5">
+                    {resendSent ? (
+                      <span className="text-green-600 font-medium">Confirmation email resent!</span>
+                    ) : (
+                      <button type="button" onClick={handleResend} disabled={resendLoading}
+                        className="text-green-700 underline underline-offset-2 bg-transparent border-0 cursor-pointer p-0 disabled:opacity-50">
+                        {resendLoading ? 'Sending…' : "Didn't receive it? Resend email"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -383,33 +511,26 @@ export default function Auth() {
                 {/* ── SIGNUP-ONLY FIELDS ── */}
                 {mode === 'signup' && (
                   <>
-                    {/* Full Name */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Full Name</label>
+                      <label className="text-[11px] font-medium text-white/55 uppercase tracking-wide">Full Name</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex"><IconUser /></span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none flex"><IconUser /></span>
                         <input className={inputCls} placeholder="Karma Wangdi"
-                          value={name} onChange={e => setName(e.target.value)} required />
+                          value={name} onChange={e => setName(e.target.value)} required autoFocus />
                       </div>
                     </div>
 
-                    {/* Phone (optional) */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+                      <label className="text-[11px] font-medium text-white/55 uppercase tracking-wide flex items-center gap-1.5">
                         Phone Number
-                        <span className="text-[10px] font-normal text-slate-400 normal-case bg-slate-100 px-1.5 py-0.5 rounded-md">Optional</span>
+                        <span className="text-[10px] font-normal text-white/35 normal-case bg-white/10 px-1.5 py-0.5 rounded-md">Optional</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex"><IconPhone /></span>
-                        <input
-                          className={inputCls}
-                          type="tel"
-                          placeholder="+975 17 123 456"
-                          value={phone}
-                          onChange={e => setPhone(e.target.value)}
-                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none flex"><IconPhone /></span>
+                        <input className={inputCls} type="tel" placeholder="+975 17 123 456"
+                          value={phone} onChange={e => setPhone(e.target.value)} />
                       </div>
-                      <p className="text-[11px] text-slate-400 pl-0.5">
+                      <p className="text-[11px] text-white/35 pl-0.5">
                         Used for account recovery only. We never share your number.
                       </p>
                     </div>
@@ -418,9 +539,9 @@ export default function Auth() {
 
                 {/* Email */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Email</label>
+                  <label className="text-[11px] font-medium text-white/55 uppercase tracking-wide">Email</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex"><IconMail /></span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none flex"><IconMail /></span>
                     <input className={inputCls} type="email" placeholder="you@example.com"
                       value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
@@ -428,30 +549,30 @@ export default function Auth() {
 
                 {/* Password */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Password</label>
+                  <label className="text-[11px] font-medium text-white/55 uppercase tracking-wide">Password</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex"><IconLock /></span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none flex"><IconLock /></span>
                     <input
                       className={`${inputCls} pr-10`}
                       type={showPass ? 'text' : 'password'}
                       placeholder={mode === 'signup' ? 'Min 8 · uppercase · number · special' : '••••••••••'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
+                      onCopy={e => e.preventDefault()}
+                      onCut={e => e.preventDefault()}
                       required
                       minLength={mode === 'signup' ? 8 : 1}
                     />
                     <button type="button" tabIndex={-1}
                       aria-label={showPass ? 'Hide password' : 'Show password'}
                       onClick={() => setShowPass(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors flex items-center bg-transparent border-0 cursor-pointer p-0">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors flex items-center bg-transparent border-0 cursor-pointer p-0">
                       {showPass ? <IconEyeOff /> : <IconEye />}
                     </button>
                   </div>
 
-                  {/* Password strength — signup only */}
                   {mode === 'signup' && <PasswordStrength password={password} />}
 
-                  {/* Remember me + Forgot — signin only */}
                   {mode === 'signin' && (
                     <div className="flex items-center justify-between mt-1">
                       <label htmlFor="remember-me" className="flex items-center gap-2 cursor-pointer select-none group">
@@ -459,7 +580,7 @@ export default function Auth() {
                           onChange={e => setRememberMe(e.target.checked)} className="sr-only" />
                         <div className={[
                           'w-4 h-4 rounded border transition-all duration-150 flex items-center justify-center pointer-events-none flex-shrink-0',
-                          rememberMe ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-300 group-hover:border-slate-400',
+                          rememberMe ? 'bg-amber-500 border-amber-500' : 'bg-white/8 border-white/25 group-hover:border-white/45',
                         ].join(' ')}>
                           {rememberMe && (
                             <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
@@ -467,54 +588,82 @@ export default function Auth() {
                             </svg>
                           )}
                         </div>
-                        <span className="text-[12px] text-slate-500 group-hover:text-slate-700 transition-colors">Remember me</span>
+                        <span className="text-[12px] text-white/50 group-hover:text-white/75 transition-colors">Remember me</span>
                       </label>
                       <button type="button" onClick={openForgot}
-                        className="text-[12px] text-blue-600 hover:text-blue-700 hover:underline bg-transparent border-0 cursor-pointer p-0 transition-colors">
+                        className="text-[12px] text-amber-400 hover:text-amber-300 hover:underline bg-transparent border-0 cursor-pointer p-0 transition-colors">
                         Forgot password?
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Error */}
                 {error && (
-                  <div className="text-[12.5px] px-3.5 py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200">{error}</div>
+                  <div className="text-[12.5px] px-3.5 py-2.5 rounded-xl bg-red-500/12 text-red-300 border border-red-400/25">
+                    {error}
+                    {showConfirmHint && email && (
+                      <div className="mt-1.5">
+                        {resendSent ? (
+                          <span className="text-green-400 font-medium">Confirmation email sent! Check your inbox.</span>
+                        ) : (
+                          <button type="button" onClick={handleResend} disabled={resendLoading}
+                            className="underline underline-offset-2 bg-transparent border-0 cursor-pointer p-0 text-red-300 hover:text-red-200 disabled:opacity-50">
+                            {resendLoading ? 'Sending…' : 'Resend confirmation email'}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
 
-                {/* Submit */}
-                <button type="submit" disabled={formLoading}
-                  className="w-full py-3 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 active:bg-gray-950 hover:-translate-y-px hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed mt-1 tracking-wide cursor-pointer border-0">
-                  {formLoading ? 'Please wait…' : mode === 'signin' ? 'Login' : 'Create Account'}
+                <button type="submit" disabled={formLoading} className={`${btnCls} mt-1`}>
+                  {formLoading
+                    ? 'Please wait…'
+                    : mode === 'signin' ? 'Login' : 'Create Account'}
                 </button>
 
               </form>
 
               <div className="flex items-center gap-3 my-4">
-                <span className="flex-1 h-px bg-slate-200" />
-                <span className="text-xs text-slate-400">or</span>
-                <span className="flex-1 h-px bg-slate-200" />
+                <span className="flex-1 h-px bg-white/30" />
+                <span className="text-xs text-white/60">or</span>
+                <span className="flex-1 h-px bg-white/30" />
               </div>
 
               <button type="button" disabled={formLoading} onClick={handleGoogle}
-                className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                style={{
+                  background: 'rgba(255,255,255,0.88)',
+                  border: '2px solid rgba(255,255,255,0.5)',
+                  color: '#374151',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.98)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.9)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15), 0 0 10px rgba(255,255,255,0.2)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.88)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)';
+                  e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.12)';
+                }}
+              >
                 <GoogleIcon />
                 Continue with Google
               </button>
 
-              <p className="text-center text-[12px] text-slate-400 mt-5">
+              <p className="text-center text-[12px] text-white/35 mt-5">
                 Need help?{' '}
-                <a href="mailto:support@pelsung.com" className="text-blue-600 hover:underline">Contact support</a>
+                <a href="mailto:support@pelsung.com" className="text-amber-400 hover:text-amber-300 hover:underline">Contact support</a>
               </p>
             </>
           )}
-
         </div>
 
-        <p className="text-center text-[11px] text-white/40 mt-5 tracking-widest uppercase">
+        <p className="text-center text-[11px] mt-5 tracking-widest uppercase text-white/40">
           FileVault · Secure · Private · Organized
         </p>
-
       </div>
     </div>
   );
