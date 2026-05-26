@@ -14,18 +14,20 @@ export function useUpload() {
   const [error, setError] = useState<string | null>(null);
 
   async function uploadFile({
-    file,
-    description,
-    tags,
-    groupId,
-    folderId,
-  }: {
-    file: File;
-    description?: string;
-    tags?: string[];
-    groupId?: string | null;
-    folderId?: string | null;
-  }) {
+  file,
+  description,
+  tags,
+  groupId,
+  folderId,
+  miniCohortId,
+}: {
+  file:          File;
+  description?:  string;
+  tags?:         string[];
+  groupId?:      string | null;
+  folderId?:     string | null;
+  miniCohortId?: string | null;  // ← add this
+}) {
     if (!user || !file) return;
     setUploading(true);
     setProgress(0);
@@ -43,17 +45,18 @@ export function useUpload() {
       const { data, error: insertError } = await db
         .from('files')
         .insert({
-          name:         auto.name,
-          file_type:    auto.fileType,
-          size_bytes:   auto.sizeBytes,
-          storage_path: storagePath,
-          description:  description || null,
-          tags:         tags || [],
-          group_id:     groupId  || null,
-          folder_id:    folderId || null,
-          uploaded_by:  user.id,
-          version:      1,
-        })
+            name:           auto.name,
+            file_type:      auto.fileType,
+            size_bytes:     auto.sizeBytes,
+            storage_path:   storagePath,
+            description:    description || null,
+            tags:           tags || [],
+            group_id:       groupId       || null,
+            folder_id:      folderId      || null,
+            mini_cohort_id: miniCohortId  || null,  // ← add this
+            uploaded_by:    user.id,
+            version:        1,
+          })
         .select()
         .single() as { data: { id: string } | null; error: unknown };
 

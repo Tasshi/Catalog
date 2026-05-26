@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import  type { AvatarProps, ButtonProps, BadgeProps, SearchBarProps, ModalProps, ToastProps, FormFieldProps } from './cons';
 
-export function Button({ variant = 'primary', children, className = '', ...props }: ButtonProps) {
+export function Button({ variant = 'primary', children, className = '', type = 'button', ...props }: ButtonProps) {
   const base = 'inline-flex items-center gap-2 text-sm font-normal leading-4 rounded cursor-pointer transition-all duration-150 border-none';
 
   const variants: Record<string, string> = {
@@ -18,7 +18,7 @@ export function Button({ variant = 'primary', children, className = '', ...props
   };
 
   return (
-    <button className={`${base} ${variants[variant] ?? variants.primary} ${className}`} {...props}>
+    <button type={type} className={`${base} ${variants[variant] ?? variants.primary} ${className}`} {...props}>
       {children}
     </button>
   );

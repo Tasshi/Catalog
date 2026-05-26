@@ -96,10 +96,11 @@ function Avatar({ name, avatarUrl, size = 36 }: { name: string; avatarUrl?: stri
 // ─── FilePreview ──────────────────────────────────────────────────────────────
 
 function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
-  const [url, setUrl]         = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const [visible, setVisible] = useState(true);
+  const [url,            setUrl]            = useState<string | null>(null);
+  const [urlLoading,     setUrlLoading]     = useState(true);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [error,          setError]          = useState<string | null>(null);
+  const [visible,        setVisible]        = useState(true);
 
   const isImage  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
   const isPdf    = ext === 'pdf';
@@ -107,37 +108,31 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
   const isText   = ['txt', 'md', 'csv', 'json', 'xml', 'html', 'css', 'js', 'ts'].includes(ext);
   const canPreview = isImage || isPdf || isOffice || isText;
 
-  const storagePath = (file.storage_path ?? file.path) as string | undefined;
+  const rawPath     = (file.storage_path ?? file.path) as string | undefined;
+  const storagePath = rawPath?.startsWith('filevault/') ? rawPath.slice('filevault/'.length) : rawPath;
 
   useEffect(() => {
-    if (!storagePath || !canPreview) { setLoading(false); return; }
-
-    let objectUrl: string | null = null;
+    if (!storagePath || !canPreview) { setUrlLoading(false); return; }
 
     (async () => {
       try {
+        const { data, error: e } = await supabase.storage
+          .from('filevault')
+          .createSignedUrl(storagePath, 3600);
+        if (e || !data) throw new Error(e?.message ?? 'Signed URL failed');
+        const signed = data.signedUrl;
+        setContentLoading(true);
         if (isOffice) {
-          const { data, error: e } = await supabase.storage
-            .from('filevault')
-            .createSignedUrl(storagePath, 3600);
-          if (e || !data) throw new Error(e?.message ?? 'Signed URL failed');
-          setUrl(`https://docs.google.com/viewer?url=${encodeURIComponent(data.signedUrl)}&embedded=true`);
+          setUrl(`https://docs.google.com/viewer?url=${encodeURIComponent(signed)}&embedded=true`);
         } else {
-          const { data, error: e } = await supabase.storage
-            .from('filevault')
-            .download(storagePath);
-          if (e || !data) throw new Error(e?.message ?? 'Download failed');
-          objectUrl = URL.createObjectURL(data);
-          setUrl(objectUrl);
+          setUrl(signed);
         }
       } catch (err) {
         setError(String(err));
       } finally {
-        setLoading(false);
+        setUrlLoading(false);
       }
     })();
-
-    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [storagePath]);
 
   const cfg = getFileConfig(ext);
@@ -169,7 +164,15 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
     <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
       {/* Preview toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-100">
-        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Preview</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Preview</span>
+          {contentLoading && (
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+              <Loader2 size={11} className="animate-spin" />
+              <span>{isOffice ? 'Loading via Google Docs…' : 'Loading…'}</span>
+            </div>
+          )}
+        </div>
         <button onClick={() => setVisible(false)}
           className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
           <EyeOff size={11} /> Hide
@@ -177,32 +180,50 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
       </div>
 
       <div className="flex items-center justify-center" style={{ minHeight: 320, maxHeight: 600 }}>
-        {loading && (
+        {urlLoading && (
           <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
             <Loader2 size={22} className="animate-spin" />
-            <span className="text-[12px]">Loading preview…</span>
+            <span className="text-[12px]">Preparing preview…</span>
           </div>
         )}
-        {!loading && error && (
+        {!urlLoading && error && (
           <div className="flex flex-col items-center gap-3 py-16 text-center px-6">
             <AlertTriangle size={22} className="text-amber-400" />
             <p className="text-[12px] text-slate-500 max-w-xs">Preview unavailable: {error}</p>
           </div>
         )}
-        {!loading && !error && url && isImage && (
+        {!urlLoading && !error && url && isImage && (
           <img src={url} alt={file.name}
             className="max-w-full max-h-full object-contain p-4 rounded"
-            style={{ maxHeight: 560 }} />
+            style={{ maxHeight: 560 }}
+            onLoad={() => setContentLoading(false)} />
         )}
-        {!loading && !error && url && (isPdf || isOffice) && (
-          <iframe src={url} title={file.name}
-            className="w-full border-none"
-            style={{ height: 560 }} />
+        {!urlLoading && !error && url && (isPdf || isOffice) && (
+          <div className="relative w-full" style={{ height: 560 }}>
+            {contentLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 z-10">
+                <Loader2 size={22} className="animate-spin text-slate-400" />
+                <span className="text-[12px] text-slate-400">
+                  {isOffice ? 'Loading document via Google Docs… this may take a moment' : 'Loading PDF…'}
+                </span>
+              </div>
+            )}
+            <iframe src={url} title={file.name}
+              className="w-full h-full border-none"
+              onLoad={() => setContentLoading(false)} />
+          </div>
         )}
-        {!loading && !error && url && isText && (
-          <iframe src={url} title={file.name}
-            className="w-full border-none bg-white"
-            style={{ height: 400 }} />
+        {!urlLoading && !error && url && isText && (
+          <div className="relative w-full" style={{ height: 400 }}>
+            {contentLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
+                <Loader2 size={18} className="animate-spin text-slate-400" />
+              </div>
+            )}
+            <iframe src={url} title={file.name}
+              className="w-full h-full border-none bg-white"
+              onLoad={() => setContentLoading(false)} />
+          </div>
         )}
       </div>
     </div>
@@ -317,7 +338,8 @@ export default function FileDetail() {
   // ── Download ───────────────────────────────────────────────────────────────
   async function handleDownload() {
     if (!file) return;
-    const storagePath = (file.storage_path ?? file.path) as string | undefined;
+    const rawDlPath   = (file.storage_path ?? file.path) as string | undefined;
+    const storagePath = rawDlPath?.startsWith('filevault/') ? rawDlPath.slice('filevault/'.length) : rawDlPath;
     if (!storagePath) return;
     setDownloading(true);
     try {

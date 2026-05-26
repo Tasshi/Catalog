@@ -13,8 +13,8 @@ function getPalette(id: string) {
 }
 
 function FolderIcon({
-  tab, body, fileCount, icon,
-}: { tab: string; body: string; fileCount: number; icon?: string }) {
+  tab, body, icon,
+}: { tab: string; body: string; icon?: string }) {
   return (
     <div style={{ position: 'relative', width: 88, height: 70, flexShrink: 0 }}>
       {/* Tab */}
@@ -46,18 +46,6 @@ function FolderIcon({
         }}>
           {icon ?? '📁'}
         </div>
-        {/* File count badge */}
-        {fileCount > 0 && (
-          <div style={{
-            position: 'absolute', bottom: 5, right: 6,
-            fontSize: 10, fontWeight: 700,
-            color: '#fff',
-            background: 'rgba(0,0,0,0.22)',
-            borderRadius: 20, padding: '1px 6px',
-          }}>
-            {fileCount}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -65,7 +53,6 @@ function FolderIcon({
 
 export function GroupCard({ group, onClick }: GroupCardProps) {
   const { tab, body } = getPalette(group.id);
-  const fileCount     = group.files?.[0]?.count ?? 0;
   const memberCount   = group.group_members?.[0]?.count ?? 0;
 
   return (
@@ -101,7 +88,7 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
     >
       {/* Top row: folder icon + name + description */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <FolderIcon tab={tab} body={body} fileCount={fileCount} icon={group.icon} />
+        <FolderIcon tab={tab} body={body} icon={group.icon} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, flex: 1 }}>
           <span style={{

@@ -115,6 +115,12 @@ export default function ResetPassword() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState('');
 
+  // Whether this tab was opened by the email link (i.e. it's the "new tab").
+  // We detect this by checking if the URL contains a Supabase token/code —
+  // meaning this tab is the one that landed from Gmail. After exchanging the
+  // token we try to close it so the user falls back to their original tab.
+  const [isEmailLinkTab, setIsEmailLinkTab] = useState(false);
+
   useEffect(() => {
     async function init() {
       const search = new URLSearchParams(window.location.search);
@@ -127,9 +133,24 @@ export default function ResetPassword() {
       // ── PKCE flow (Supabase v2 default): ?code=… ───────────────────────────
       const code = search.get('code');
       if (code) {
+        // This tab was opened by the email link — mark it so we can close it
+        // after the token exchange, letting the user return to their original tab.
+        setIsEmailLinkTab(true);
         const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) { console.error('exchangeCodeForSession error:', error); setPageState('expired'); }
-        else        setPageState('ready');
+        if (error) {
+          console.error('exchangeCodeForSession error:', error);
+          setPageState('expired');
+        } else {
+          // Token exchanged — the PASSWORD_RECOVERY event has now broadcast to
+          // all open tabs (including the original /auth tab which will navigate
+          // to /reset-password automatically). Attempt to close this new tab.
+          // window.close() only works when the tab was opened by a script;
+          // Gmail opens it as a top-level navigation so it may not close —
+          // in that case we just show the normal reset form here as fallback.
+          window.close();
+          // If close didn't work (browser blocked it), show the form anyway
+          setPageState('ready');
+        }
         return;
       }
 
@@ -139,13 +160,21 @@ export default function ResetPassword() {
       const type         = hash.get('type');
 
       if (type === 'recovery' && accessToken && refreshToken) {
+        setIsEmailLinkTab(true);
         const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-        if (error) { console.error('setSession error:', error); setPageState('expired'); }
-        else        setPageState('ready');
+        if (error) {
+          console.error('setSession error:', error);
+          setPageState('expired');
+        } else {
+          // Same as above — try to close, fall back to showing the form
+          window.close();
+          setPageState('ready');
+        }
         return;
       }
 
-      // ── Fallback: already has an active session ────────────────────────────
+      // ── Fallback: navigated here normally (e.g. from the original tab via
+      //    the PASSWORD_RECOVERY listener in Auth.tsx) ────────────────────────
       const { data: { session } } = await supabase.auth.getSession();
       setPageState(session ? 'ready' : 'expired');
     }
@@ -186,9 +215,17 @@ export default function ResetPassword() {
     await supabase.auth.signOut();
     setPageState('done');
 
-    // Navigate once auth state has cleared (SIGNED_OUT event fires synchronously
-    // after signOut(), so by the time this callback runs user is null in AuthContext)
-    setTimeout(() => navigate('/auth', { replace: true }), 2000);
+    // If this was the email-link tab (fallback — close didn't work earlier),
+    // try once more to close it after success. Otherwise navigate normally.
+    setTimeout(() => {
+      if (isEmailLinkTab) {
+        window.close();
+        // If still open, navigate to auth as final fallback
+        setTimeout(() => navigate('/auth', { replace: true }), 500);
+      } else {
+        navigate('/auth', { replace: true });
+      }
+    }, 2000);
   }
 
   const allRulesPass   = RULES.every(r => r.test(password));
@@ -366,7 +403,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700 hover:-translate-y-px hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none tracking-wide cursor-pointer border-0"
+                className="flex-1 py--3 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 active:bg-green-700 hover:-translate-y-px hover:shadow-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none tracking-wide cursor-pointer border-0"
               >
                 {submitting ? 'Saving…' : 'Save'}
               </button>

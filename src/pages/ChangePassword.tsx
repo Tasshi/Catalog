@@ -97,8 +97,8 @@ export default function ChangePassword() {
 
             {/* Card header */}
             <div className="px-6 pt-6 pb-5 border-b border-slate-100 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
-                <KeyRound size={17} className="text-violet-600" strokeWidth={1.5} />
+              <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                <KeyRound size={17} strokeWidth={1.5} style={{ color: '#EB5800' }} />
               </div>
               <div>
                 <h1 className="text-base font-medium text-slate-900 leading-5">Change your password</h1>
@@ -180,11 +180,14 @@ export default function ChangePassword() {
               <button
                 type="submit"
                 disabled={!canSubmit}
+                style={canSubmit ? { background: '#EB5800' } : undefined}
                 className={`w-full py-2.5 rounded-lg text-sm font-medium border-none cursor-pointer transition-all duration-150 ${
                   canSubmit
-                    ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-[0.98]'
+                    ? 'text-white hover:opacity-90 active:scale-[0.98]'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 }`}
+                onMouseEnter={e => { if (canSubmit) e.currentTarget.style.background = '#CC4D00'; }}
+                onMouseLeave={e => { if (canSubmit) e.currentTarget.style.background = '#EB5800'; }}
               >
                 {loading ? 'Updating…' : 'Update password'}
               </button>
@@ -213,7 +216,7 @@ function Field({ label, value, onChange, show, toggleShow, placeholder, status }
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-medium text-slate-600">{label}</label>
       <div
-        className="flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-colors duration-150 focus-within:border-violet-400"
+        className="flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-colors duration-150 focus-within:border-[#EB5800]"
         style={{
           borderColor:
             status === 'match'    ? '#22c55e' :

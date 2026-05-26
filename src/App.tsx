@@ -25,8 +25,8 @@ function LoadingScreen() {
   return (
     <div className={styles.loadingScreen}>
       <div className={styles.loadingInner}>
-        <div className={styles.loadingIcon}>🗄</div>
-        <div className={styles.loadingText}>Loading FileVault…</div>
+        <div className={styles.loadingIcon}> </div>
+        <div className={styles.loadingText}>Loading.....</div>
       </div>
     </div>
   );

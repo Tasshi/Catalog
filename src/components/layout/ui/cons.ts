@@ -1,3 +1,4 @@
+
 export interface ToastData {
   message: string;
   type: 'success' | 'error' | 'info';
@@ -60,6 +61,7 @@ export interface Group {
   icon?: string;
   owner_id: string;
   created_at: string;
+  mini_cohort_id?: string | null;  // FK to mini_cohorts
   group_members?: { count: number }[];
   files?: { count: number }[];
 }
@@ -184,4 +186,18 @@ export interface FileRecord {
   authorName: string;
   groupName?: string;
   groupIcon?: string;
+}
+export interface MiniCohort {
+  id:           string;
+  name:         string;
+  group_id:     string | null;
+  project_name: string | null;
+}
+
+export interface Invitation {
+  id:        string;
+  email:     string;
+  full_name: string | null;
+  phone:     string | null;
+  role:      string;
 }

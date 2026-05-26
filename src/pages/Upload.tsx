@@ -42,7 +42,8 @@ export default function Upload() {
     tags:        string[];
     groupId:     string | null;
     subGroupId:  string | null;
-    folderId:    string | null;
+    folderId: string | null;
+    miniCohortId: string | null;
   }) {
     if (selectedFiles.length === 0) return;
 
@@ -60,11 +61,12 @@ export default function Upload() {
         const { data: newFolder, error: folderError } = await db
           .from('subprojects')
           .insert({
-            group_id:    meta.groupId,
-            name:        meta.projectName.trim(),
-            description: meta.description.trim() || null,
-            tags:        meta.tags.length > 0 ? meta.tags : [],
-            created_by:  user?.id ?? null,
+            group_id:       meta.groupId,
+            name:           meta.projectName.trim(),
+            description:    meta.description.trim() || null,
+            tags:           meta.tags.length > 0 ? meta.tags : [],
+            created_by:     user?.id ?? null,
+            mini_cohort_id: meta.miniCohortId || null,
           })
           .select('id')
           .single() as { data: { id: string } | null; error: unknown }; // ✅ typed
@@ -87,7 +89,8 @@ export default function Upload() {
             description: meta.description,
             tags:        meta.tags,
             groupId:     meta.groupId,
-            folderId:    targetFolderId,
+            folderId: targetFolderId,
+            miniCohortId: meta.miniCohortId,
           })
         )
       );

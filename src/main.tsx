@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import App from './routes/router';
+import App from './App';
 import { queryClient, persister } from './lib/query-client';
 import './styles/globals.css';
 

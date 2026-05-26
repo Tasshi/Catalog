@@ -38,26 +38,38 @@ async function loadFolderTree(groupId: string): Promise<FolderRecord[]> {
 
   const flat: FolderRecord[] = (data ?? []).map((f: FolderRecord) => ({
     ...f,
-    children:   [],
-    file_count: 0,
+    children:        [],
+    file_count:      0,
+    mini_cohort_ids: f.mini_cohort_id ? [f.mini_cohort_id] : [],
   }));
 
   const folderIds = flat.map(f => f.id);
-  const countMap: Record<string, number> = {};
+  const countMap:     Record<string, number>   = {};
+  const cohortIdsMap: Record<string, Set<string>> = {};
 
   if (folderIds.length > 0) {
-    const { data: fileCounts } = await db
+    const { data: fileData } = await db
       .from('files')
-      .select('folder_id')
+      .select('folder_id, mini_cohort_id')
       .in('folder_id', folderIds)
       .eq('is_deleted', false);
 
-    (fileCounts ?? []).forEach((f: { folder_id: string | null }) => {
-      if (f.folder_id) countMap[f.folder_id] = (countMap[f.folder_id] ?? 0) + 1;
+    (fileData ?? []).forEach((f: { folder_id: string | null; mini_cohort_id: string | null }) => {
+      if (!f.folder_id) return;
+      countMap[f.folder_id] = (countMap[f.folder_id] ?? 0) + 1;
+      if (f.mini_cohort_id) {
+        if (!cohortIdsMap[f.folder_id]) cohortIdsMap[f.folder_id] = new Set();
+        cohortIdsMap[f.folder_id].add(f.mini_cohort_id);
+      }
     });
   }
 
-  flat.forEach(f => { f.file_count = countMap[f.id] ?? 0; });
+  flat.forEach(f => {
+    f.file_count = countMap[f.id] ?? 0;
+    const fromFiles = Array.from(cohortIdsMap[f.id] ?? []);
+    // Merge: direct folder assignment + ids derived from files (deduplicated)
+    f.mini_cohort_ids = Array.from(new Set([...f.mini_cohort_ids, ...fromFiles]));
+  });
   return buildTree(flat);
 }
 

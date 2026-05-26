@@ -3,20 +3,22 @@
 export type FileType = 'pdf' | 'docx' | 'xlsx' | 'pptx' | 'zip' | 'img' | 'other';
 
 export interface FolderRecord {
-  id:          string;
-  group_id:    string;
-  parent_id:   string | null;
-  name:        string;
-  icon:        string;
-  is_auto:     boolean;
-  auto_type:   FileType | null;
-  created_by:  string;
-  created_at:  string;
-  description: string | null;   // ← added
-  tags:        string[];         // ← added (text[] in DB, default '{}')
+  id:             string;
+  group_id:       string;
+  parent_id:      string | null;
+  name:           string;
+  icon:           string;
+  is_auto:        boolean;
+  auto_type:      FileType | null;
+  created_by:     string;
+  created_at:     string;
+  description:    string | null;
+  tags:           string[];
+  mini_cohort_id:  string | null;
   // client-side only (built after fetch)
-  children:    FolderRecord[];
-  file_count:  number;
+  children:        FolderRecord[];
+  file_count:      number;
+  mini_cohort_ids: string[];   // distinct mini cohort ids from files inside this folder
 }
 
 export const AUTO_FOLDER_META: Record<FileType, { label: string; icon: string }> = {

@@ -32,7 +32,7 @@ const selectStyle: React.CSSProperties = {
   backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
 };
 const primaryBtn: React.CSSProperties = {
-  width: '100%', height: 48, borderRadius: 12, border: 'none', background: '#6366f1',
+  width: '100%', height: 48, borderRadius: 12, border: 'none', background: '#EB5800',
   color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8,
   transition: 'background 0.15s',
 };
@@ -168,13 +168,19 @@ export default function Settings() {
 
     setUploading(true);
     try {
-      const ext  = file.name.split('.').pop() ?? 'png';
-      const path = `avatars/${uid}.${ext}`;
+      const ext  = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+      // Path must start with the user's own ID so storage RLS allows the write
+      const path = `${uid}/avatar.${ext}`;
       const { error: uploadError } = await (supabase as any).storage
         .from('filevault').upload(path, file, { upsert: true, cacheControl: '3600' });
       if (uploadError) throw uploadError;
-      const { data } = (supabase as any).storage.from('filevault').getPublicUrl(path);
-      const publicUrl = data.publicUrl as string;
+
+      // Generate a long-lived signed URL (1 year) so it works even on private buckets
+      const { data: signData, error: signError } = await (supabase as any).storage
+        .from('filevault').createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (signError) throw signError;
+      const publicUrl = signData.signedUrl as string;
+
       await db.from('profiles').update({ avatar_url: publicUrl }).eq('id', uid);
       setAvatarUrl(publicUrl);
       saveCache({ full_name: name, cohort, avatar_url: publicUrl, groups });
@@ -265,14 +271,16 @@ export default function Settings() {
       <div className="flex-1 overflow-y-auto p-6">
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <div style={card}>
-            <div style={iconCircle}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+              <div style={iconCircle}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Edit profile</div>
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>Update your profile.</div>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Edit profile</div>
-            <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 24 }}>Update your name, photo and group.</div>
 
             {/* Avatar row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, padding: '14px 16px', background: '#f9fafb', borderRadius: 12, border: '1px solid #f3f4f6' }}>
@@ -352,8 +360,8 @@ export default function Settings() {
             <button
               onClick={handleSave} disabled={saving}
               style={{ ...primaryBtn, opacity: saving ? 0.7 : 1 }}
-              onMouseEnter={e => { if (!saving) (e.currentTarget.style.background = '#4f46e5'); }}
-              onMouseLeave={e => (e.currentTarget.style.background = '#6366f1')}
+              onMouseEnter={e => { if (!saving) (e.currentTarget.style.background = '#CC4D00'); }}
+              onMouseLeave={e => (e.currentTarget.style.background = '#EB5800')}
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>

@@ -341,6 +341,8 @@ export default function SubfoldersView() {
   const [showCohortDialog, setShowCohortDialog] = useState(false);
   const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set());
   const [exporting, setExporting]       = useState(false);
+  const [projPage,  setProjPage]        = useState(1);
+  const PROJ_PAGE_SIZE  = 6;
 
   // ── Step 4: auto-navigate to the file's folder once tree is ready ────────
   useEffect(() => {
@@ -472,6 +474,11 @@ export default function SubfoldersView() {
   // ── Loading states ────────────────────────────────────────────────────────
   const isBooting = loadingFile || (loadingFolders && roots.length === 0);
 
+  // ── Project pagination ────────────────────────────────────────────────────
+  const projTotalPages = Math.max(1, Math.ceil(roots.length / PROJ_PAGE_SIZE));
+  const safeProjPage   = Math.min(projPage, projTotalPages);
+  const pagedRoots     = roots.slice((safeProjPage - 1) * PROJ_PAGE_SIZE, safeProjPage * PROJ_PAGE_SIZE);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -539,10 +546,17 @@ export default function SubfoldersView() {
                 <span key={f.id} className="flex items-center gap-1.5">
                   <span className={s.breadcrumbSep}><ChevronRight size={12} /></span>
                   {i === folderStack.length - 1 ? (
-                    <span className={s.breadcrumbActive}>
-                      <Folder size={13} className="text-amber-500 shrink-0" />
-                      {f.name}
-                    </span>
+                    <>
+                      <button type="button" onClick={() => jumpTo(i - 1)}
+                        className="flex items-center text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer p-0"
+                        title="Go back">
+                        <ArrowLeft size={13} />
+                      </button>
+                      <span className={s.breadcrumbActive}>
+                        <Folder size={13} className="text-amber-500 shrink-0" />
+                        {f.name}
+                      </span>
+                    </>
                   ) : (
                     <button type="button" onClick={() => jumpTo(i)}
                       className="hover:text-slate-800 bg-transparent border-0 cursor-pointer text-sm text-slate-500 p-0">
@@ -597,15 +611,48 @@ export default function SubfoldersView() {
                     <p className={s.emptySubtext}>Projects will appear here once they're created</p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
-                    {roots.map(folder => (
-                      <FolderTile key={folder.id} node={folder} canEdit={canEdit}
-                        onOpen={() => openFolder(folder)}
-                        onRename={handleRename}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
+                      {pagedRoots.map(folder => (
+                        <FolderTile key={folder.id} node={folder} canEdit={canEdit}
+                          onOpen={() => openFolder(folder)}
+                          onRename={handleRename}
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </div>
+
+                    {projTotalPages > 1 && (
+                      <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+                        <span className="text-[12px] text-slate-400">
+                          {(safeProjPage - 1) * PROJ_PAGE_SIZE + 1}–{Math.min(safeProjPage * PROJ_PAGE_SIZE, roots.length)} of {roots.length} projects
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setProjPage(p => Math.max(1, p - 1))}
+                            disabled={safeProjPage === 1}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-[#054159] hover:text-white hover:border-[#054159] disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-white text-sm cursor-pointer"
+                          >‹</button>
+                          {Array.from({ length: projTotalPages }, (_, i) => i + 1).map(n => (
+                            <button
+                              key={n}
+                              onClick={() => setProjPage(n)}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+                                n === safeProjPage
+                                  ? 'bg-[#054159] text-white border-[#054159]'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:bg-[#054159] hover:text-white hover:border-[#054159]'
+                              }`}
+                            >{n}</button>
+                          ))}
+                          <button
+                            onClick={() => setProjPage(p => Math.min(projTotalPages, p + 1))}
+                            disabled={safeProjPage === projTotalPages}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-[#054159] hover:text-white hover:border-[#054159] disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-white text-sm cursor-pointer"
+                          >›</button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -810,7 +857,10 @@ export default function SubfoldersView() {
                 Cancel
               </button>
               <button type="button" onClick={() => { setShowCohortDialog(false); navigate('/settings'); }}
-                className="flex-1 h-10 rounded-xl text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 border-0 cursor-pointer">
+                className="flex-1 h-10 rounded-xl text-sm font-medium text-white border-0 cursor-pointer"
+                style={{ background: '#EB5800' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#CC4D00')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#EB5800')}>
                 Go to Settings
               </button>
             </div>

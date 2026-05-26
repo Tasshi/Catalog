@@ -10,12 +10,6 @@ import {
 } from 'lucide-react';
 import type { Group } from './ui/cons';
 
-function groupColor(str: string) {
-  const palette = ['#5B8DEF', '#4CAF7D', '#F5C842', '#E07B54', '#A78BFA', '#F472B6', '#34D399'];
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return palette[Math.abs(hash) % palette.length];
-}
 
 interface SidebarProps {
   selectedGroupId?: string | null;
@@ -48,7 +42,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
   const mainNav = [
     { label: 'Dashboard',  icon: LayoutDashboard, path: '/',        adminOnly: true  },
     { label: 'My Catalog', icon: FolderOpen,       path: '/catalog', adminOnly: false },
-    { label: 'Creat Project',     icon: Upload,            path: '/upload',  adminOnly: false },
+    { label: 'Create Project',     icon: Upload,            path: '/upload',  adminOnly: false },
   ] as const;
 
   const visibleMainNav = mainNav.filter(item => !item.adminOnly || perms.isAdmin);
@@ -64,7 +58,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             // style={{ background: 'linear-gradient(135deg, #533AFD, #FF6118)' }} 
             
           >
-            <img src="/src/assets/Logo.png" alt="react logo" style={{ width: '400px' }} />
+            <img src="/src/assets/Logo.png" alt="react logo" style={{ width: '400px', opacity: 0.75, mixBlendMode: 'multiply' }} />
           </div>
           <div>
             <div className="text-base font-normal leading-[18.4px] text-slate-900">Pelsung</div>
@@ -89,21 +83,21 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-[6px] border-none cursor-pointer text-sm font-normal leading-4 text-left transition-colors duration-150 ${
+              className={`group flex items-center gap-2 w-full px-3 py-2.5 rounded-[6px] border-none cursor-pointer text-sm font-normal leading-4 text-left transition-colors duration-150 ${
                 isActive
-                  ? 'bg-violet-50 text-violet-600'
-                  : 'bg-transparent text-slate-700 hover:bg-slate-100'
+                  ? 'bg-[#054159] text-white'
+                  : 'bg-transparent text-slate-700 hover:bg-[#054159] hover:text-white'
               }`}
             >
               <Icon
                 size={15}
                 strokeWidth={isActive ? 2 : 1.5}
-                className={`flex-shrink-0 ${isActive ? 'text-violet-600' : 'text-slate-500'}`}
+                className={`flex-shrink-0 transition-colors duration-150 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'}`}
               />
               <span className="flex-1">{label}</span>
 
               {path === '/catalog' && !perms.isAdmin && (
-                <span className="text-[10px] text-slate-400 bg-slate-100 rounded px-1 py-0.5 leading-none flex-shrink-0">
+                <span className={`text-[10px] rounded px-1 py-0.5 leading-none flex-shrink-0 ${isActive ? 'bg-white/20 text-white/80' : 'text-slate-400 bg-slate-100 group-hover:bg-white/20 group-hover:text-white/80'}`}>
                   view
                 </span>
               )}
@@ -120,54 +114,42 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
 
             <button
               onClick={() => { if (!onGroupsPage) navigate('/groups'); onSelectGroup?.(null); }}
-              className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-[6px] border-none cursor-pointer text-sm font-normal leading-4 text-left transition-colors duration-150 ${
+              className={`group flex items-center gap-2 w-full px-3 py-2.5 rounded-[6px] border-none cursor-pointer text-sm font-normal leading-4 text-left transition-colors duration-150 ${
                 onGroupsPage && selectedGroupId === null
-                  ? 'bg-violet-50 text-violet-600'
-                  : onGroupsPage
-                  ? 'bg-transparent text-violet-500 hover:bg-slate-100'
-                  : 'bg-transparent text-slate-700 hover:bg-slate-100'
+                  ? 'bg-[#054159] text-white'
+                  : 'bg-transparent text-slate-700 hover:bg-[#054159] hover:text-white'
               }`}
             >
               <Users
                 size={15}
                 strokeWidth={onGroupsPage ? 2 : 1.5}
-                className={`flex-shrink-0 ${onGroupsPage ? 'text-violet-600' : 'text-slate-500'}`}
+                className={`flex-shrink-0 transition-colors duration-150 ${onGroupsPage && selectedGroupId === null ? 'text-white' : 'text-slate-500 group-hover:text-white'}`}
               />
               <span className="flex-1">All Cohorts</span>
               {onGroupsPage && groups.length > 0 && (
-                <ChevronDown size={12} className="text-violet-400 flex-shrink-0" />
+                <ChevronDown size={12} className={`flex-shrink-0 group-hover:text-white/70 ${onGroupsPage && selectedGroupId === null ? 'text-white/70' : 'text-slate-400'}`} />
               )}
             </button>
 
             {onGroupsPage && groups.map((group) => {
               const isActive = selectedGroupId === group.id;
-              const dot = groupColor(group.id);
               return (
                 <button
                   key={group.id}
                   onClick={() => onSelectGroup?.(group)}
-                  className={`flex items-center gap-2 w-full pl-8 pr-3 py-2 rounded-[6px] border-none cursor-pointer text-[13px] font-normal leading-4 text-left transition-colors duration-150 ${
+                  className={`group flex items-center gap-2 w-full pl-8 pr-3 py-2 rounded-[6px] border-none cursor-pointer text-[13px] font-normal leading-4 text-left transition-colors duration-150 ${
                     isActive
-                      ? 'bg-violet-50 text-violet-700'
-                      : 'bg-transparent text-slate-600 hover:bg-slate-100'
+                      ? 'bg-[#054159] text-white'
+                      : 'bg-transparent text-slate-600 hover:bg-[#054159] hover:text-white'
                   }`}
                 >
-                  <div
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background: dot,
-                      flexShrink: 0,
-                      boxShadow: isActive ? `0 0 5px ${dot}99` : 'none',
-                    }}
-                  />
                   <span className="truncate">
                     {group.icon ? `${group.icon} ` : ''}{group.name}
                   </span>
                 </button>
               );
             })}
+
           </>
         )}
       </nav>
@@ -184,7 +166,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
               <Avatar name={profile?.full_name || 'User'} size="sm" />
               <div className="min-w-0">
                 <div className="text-sm font-medium text-slate-900 leading-4 truncate">
-                  Hi {profile?.full_name?.split(' ')[0] || 'User'}
+                  {profile?.full_name?.split(' ')[0] || 'User'}
                 </div>
                 <div className="text-xs text-slate-400 leading-[14px] mt-0.5 capitalize">
                   {profile?.role || 'member'}
@@ -196,16 +178,16 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             <div className="py-1">
               <button
                 onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
+                className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-700 hover:bg-[#054159] hover:text-white cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
               >
-                <Settings size={14} strokeWidth={1.5} className="text-slate-400 flex-shrink-0" />
+                <Settings size={14} strokeWidth={1.5} className="text-slate-400 flex-shrink-0 group-hover:text-white" />
                 Settings
               </button>
               <button
                 onClick={() => { setDropdownOpen(false); navigate('/change-password'); }}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
+                className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-700 hover:bg-[#054159] hover:text-white cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
               >
-                <KeyRound size={14} strokeWidth={1.5} className="text-slate-400 flex-shrink-0" />
+                <KeyRound size={14} strokeWidth={1.5} className="text-slate-400 flex-shrink-0 group-hover:text-white" />
                 Change Password
               </button>
             </div>
@@ -225,20 +207,20 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
         {/* Trigger row */}
         <button
           onClick={() => setDropdownOpen(prev => !prev)}
-          className="w-full px-4 py-3 flex items-center gap-2.5 hover:bg-slate-50 cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
+          className="group w-full px-4 py-3 flex items-center gap-2.5 hover:bg-[#054159] cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
         >
           <Avatar name={profile?.full_name || 'User'} size="sm" />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-normal text-slate-900 leading-4 truncate">
+            <div className="text-sm font-normal text-slate-900 leading-4 truncate group-hover:text-white transition-colors duration-150">
               {profile?.full_name || 'User'}
             </div>
-            <div className="text-xs text-slate-400 leading-[14px] mt-0.5 capitalize">
+            <div className="text-xs text-slate-400 leading-[14px] mt-0.5 capitalize group-hover:text-white/60 transition-colors duration-150">
               {profile?.role || 'member'}
             </div>
           </div>
           <ChevronDown
             size={13}
-            className={`text-slate-400 flex-shrink-0 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+            className={`text-slate-400 flex-shrink-0 transition-transform duration-200 group-hover:text-white/70 ${dropdownOpen ? 'rotate-180' : ''}`}
           />
         </button>
       </div>

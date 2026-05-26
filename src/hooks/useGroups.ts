@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -12,6 +13,7 @@ type GroupInsert = {
   owner_id: string;
   description?: string;
   icon?: string;
+  mini_cohort_id?: string | null; // ✅ FK to mini_cohorts table
 };
 
 // ---------------------------------------------------------------------------
@@ -36,16 +38,18 @@ export function useGroups() {
     staleTime: 5 * 60 * 1000,
   });
 
-  async function createGroup({ name, description, icon }: {
+  async function createGroup({ name, description, icon, mini_cohort_id }: {
     name: string;
     description?: string;
     icon?: string;
+    mini_cohort_id?: string | null; // ✅ added
   }) {
     if (!user) throw new Error('Not authenticated');
 
     const payload: GroupInsert = { name, owner_id: user.id };
-    if (description?.trim()) payload.description = description.trim();
-    if (icon)                 payload.icon        = icon;
+    if (description?.trim())  payload.description    = description.trim();
+    if (icon)                  payload.icon           = icon;
+    if (mini_cohort_id)        payload.mini_cohort_id = mini_cohort_id; // ✅ added
 
     const { data, error } = await db.from('groups').insert(payload).select().single();
 

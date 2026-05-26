@@ -1,6 +1,7 @@
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import bgImage from '../assets/gelephu-bg.jpg';
 import logoImage from '../assets/Logo.png';
 
@@ -218,6 +219,21 @@ export default function Auth() {
   const [resendSent, setResendSent]       = useState(false);
   const [showConfirmHint, setShowConfirmHint] = useState(false);
 
+  // ── KEY FIX: Listen for PASSWORD_RECOVERY event ──────────────────────────
+  // When the user clicks the reset link in Gmail, it opens a NEW tab.
+  // Supabase broadcasts the PASSWORD_RECOVERY auth event to ALL open tabs
+  // of your app. This listener catches it in the ORIGINAL tab and navigates
+  // it to /reset-password — so the user can work in the tab they were
+  // already using, and the new tab becomes irrelevant.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password', { replace: true });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   async function handleResend() {
     if (!email || resendLoading) return;
     setResendLoading(true);
@@ -260,11 +276,9 @@ export default function Auth() {
         setPassword('');
         setPhone('');
         if (needsConfirmation) {
-          // Email confirmation ON — show message and stay on sign in tab
           setSignupSuccess(true);
           setMode('signin');
         } else {
-          // Email confirmation OFF — go straight to app
           startTransition(() => navigate('/catalog'));
         }
       }
@@ -337,56 +351,32 @@ export default function Auth() {
     <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden">
 
       {/* Cinematic keyframes */}
-      <style>{`
-        @keyframes cinematicZoom {
-          from { transform: scale(0.92); }
-          to   { transform: scale(1.04); }
-        }
-        @keyframes dustFade {
-          0%   { opacity: 0; }
-          20%  { opacity: 1; }
-          80%  { opacity: 1; }
-          100% { opacity: 0.85; }
-        }
-      `}</style>
-
-      {/* Background — full building cinematic */}
+      {/* Background — static */}
       <div className="fixed inset-0 z-0 overflow-hidden">
-        {/* Building image — zooms slowly inward, sky visible */}
         <div
           style={{
             position: 'absolute',
-            inset: '-4%',
+            inset: 0,
             backgroundImage: `url(${bgImage})`,
-            backgroundSize: '90%',
-            backgroundPosition: 'center 12%',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
             filter: 'brightness(0.85) saturate(1.35) sepia(0.1) contrast(1.05)',
-            animation: 'cinematicZoom 16s ease-out forwards',
-            transformOrigin: 'center 35%',
           }}
         />
-
-        {/* Warm amber glow from building lights */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'radial-gradient(ellipse 70% 55% at 50% 58%, rgba(255,160,50,0.22) 0%, rgba(200,100,10,0.1) 45%, transparent 70%)',
-          animation: 'dustFade 16s ease-out forwards',
+          opacity: 0.85,
         }} />
-
-        {/* Soft vignette — pulls focus to building */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'radial-gradient(ellipse 90% 85% at 50% 50%, transparent 25%, rgba(0,0,0,0.38) 70%, rgba(0,0,0,0.65) 100%)',
         }} />
-
-        {/* Sky gradient top fade */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'linear-gradient(180deg, rgba(10,5,20,0.38) 0%, transparent 28%, transparent 72%, rgba(5,2,10,0.42) 100%)',
         }} />
-
-        {/* Subtle warm shimmer */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'linear-gradient(108deg, transparent 25%, rgba(255,185,70,0.05) 50%, transparent 72%)',
@@ -408,7 +398,7 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Card — bright glass */}
+        {/* Card */}
         <div
           className="backdrop-blur-2xl rounded-[22px] px-8 pt-7 pb-7"
           style={{
@@ -439,6 +429,7 @@ export default function Auth() {
                   <p className="text-[13px] text-white/50 leading-relaxed mb-6">
                     A password reset link was sent to{' '}
                     <span className="font-medium text-white/80">{forgotEmail}</span>.
+                    {' '}Click the link in the email and this tab will automatically open the reset form.
                   </p>
                   <button type="button" onClick={backToSignIn} className={btnCls}>
                     Back to Sign In
@@ -449,6 +440,7 @@ export default function Auth() {
                   <h2 className="text-[17px] font-semibold text-white mb-1">Forgot password?</h2>
                   <p className="text-[12.5px] text-white/50 mb-5 leading-relaxed">
                     Enter your account email and we'll send you a reset link.
+                    Keep this tab open — clicking the link in your email will bring the reset form right here.
                   </p>
                   <form onSubmit={handleForgotSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">

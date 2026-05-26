@@ -1,7 +1,8 @@
 import { getFileConfig } from '../../lib/metadata';
 import { Badge, Avatar } from '../layout/ui';
-import { Download, Info, Trash2 } from 'lucide-react';
+import { Download, Info, Trash2, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState, useRef, useEffect } from 'react';
 import type { IconSize,FileIconProps, FileRowProps,FileCardProps } from '../layout/ui/cons';
 
 // ── FileIcon ──────────────────────────────────────────────────────────────────
@@ -63,6 +64,18 @@ export function FileRow({ file, onView, onDelete, onDownload }: FileRowProps) {
     ? format(new Date(file.created_at), 'MMM d, yyyy')
     : '—';
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [menuOpen]);
+
   return (
     <tr
       className="group cursor-pointer transition-colors duration-100 hover:bg-[#F8FAFC]"
@@ -96,7 +109,7 @@ export function FileRow({ file, onView, onDelete, onDownload }: FileRowProps) {
             {file.groupName}
           </span>
         ) : (
-          <span className="text-[#64748D]">Personal</span>
+          <span className="text-[#64748D]"></span>
         )}
       </td>
 
@@ -113,28 +126,35 @@ export function FileRow({ file, onView, onDelete, onDownload }: FileRowProps) {
         {dateStr}
       </td>
 
-      {/* Actions — visible on row hover */}
+      {/* Actions — ellipsis reveals inline buttons */}
       <td className="px-4 py-3 border-b border-[#D4DEE9]">
-        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          <IconBtn
-            title="View details"
-            onClick={e => { e.stopPropagation(); onView(file); }}
+        <div ref={menuRef} className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+
+          {/* Inline buttons — slide in when menu is open */}
+          <div
+            className="flex items-center gap-1 overflow-hidden transition-all duration-200"
+            style={{ maxWidth: menuOpen ? 96 : 0, opacity: menuOpen ? 1 : 0 }}
           >
-            <Info size={12} strokeWidth={1.5} />
-          </IconBtn>
+            <IconBtn title="Preview" onClick={() => { setMenuOpen(false); onView(file); }}>
+              <Info size={12} strokeWidth={1.5} />
+            </IconBtn>
+            <IconBtn title="Download" onClick={() => { setMenuOpen(false); onDownload(file); }}>
+              <Download size={12} strokeWidth={1.5} />
+            </IconBtn>
+            <IconBtn danger title="Delete" onClick={() => { setMenuOpen(false); onDelete(file); }}>
+              <Trash2 size={12} strokeWidth={1.5} />
+            </IconBtn>
+          </div>
+
+          {/* Ellipsis toggle */}
           <IconBtn
-            title="Download"
-            onClick={e => { e.stopPropagation(); onDownload(file); }}
+            title="More options"
+            onClick={() => setMenuOpen(v => !v)}
+            className={menuOpen ? 'bg-[#F3F3F3] border-[#B8CCDB]' : ''}
           >
-            <Download size={12} strokeWidth={1.5} />
+            <MoreVertical size={12} strokeWidth={1.5} />
           </IconBtn>
-          <IconBtn
-            danger
-            title="Delete"
-            onClick={e => { e.stopPropagation(); onDelete(file); }}
-          >
-            <Trash2 size={12} strokeWidth={1.5} />
-          </IconBtn>
+
         </div>
       </td>
     </tr>
@@ -148,6 +168,18 @@ export function FileCard({ file, onView, onDelete, onDownload }: FileCardProps) 
   const dateStr = file.created_at
     ? format(new Date(file.created_at), 'MMM d, yyyy')
     : '—';
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [menuOpen]);
 
   return (
     <div
@@ -163,20 +195,46 @@ export function FileCard({ file, onView, onDelete, onDownload }: FileCardProps) 
       {/* Top row: icon + action buttons */}
       <div className="flex items-start justify-between mb-4">
         <FileIcon ext={ext} size="md" />
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          <IconBtn
-            title="Download"
-            onClick={e => { e.stopPropagation(); onDownload(file); }}
-          >
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150" onClick={e => e.stopPropagation()}>
+          <IconBtn title="Preview" onClick={() => onView(file)}>
+            <Info size={11} strokeWidth={1.5} />
+          </IconBtn>
+          <IconBtn title="Download" onClick={() => onDownload(file)}>
             <Download size={11} strokeWidth={1.5} />
           </IconBtn>
-          <IconBtn
-            danger
-            title="Delete"
-            onClick={e => { e.stopPropagation(); onDelete(file); }}
-          >
+          <IconBtn danger title="Delete" onClick={() => onDelete(file)}>
             <Trash2 size={11} strokeWidth={1.5} />
           </IconBtn>
+
+          {/* Ellipsis dropdown */}
+          <div ref={menuRef} className="relative">
+            <IconBtn title="More" onClick={() => setMenuOpen(v => !v)}>
+              <MoreVertical size={11} strokeWidth={1.5} />
+            </IconBtn>
+            {menuOpen && (
+              <div className="absolute right-0 top-8 z-50 w-40 bg-white border border-[#D4DEE9] rounded-lg shadow-lg overflow-hidden">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-[#273951] hover:bg-[#F8FAFC] border-none bg-transparent cursor-pointer text-left transition-colors"
+                  onClick={() => { setMenuOpen(false); onView(file); }}
+                >
+                  <Info size={13} strokeWidth={1.5} className="text-[#64748D]" /> Preview
+                </button>
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-[#273951] hover:bg-[#F8FAFC] border-none bg-transparent cursor-pointer text-left transition-colors"
+                  onClick={() => { setMenuOpen(false); onDownload(file); }}
+                >
+                  <Download size={13} strokeWidth={1.5} className="text-[#64748D]" /> Download
+                </button>
+                <div className="border-t border-[#D4DEE9]" />
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-red-500 hover:bg-red-50 border-none bg-transparent cursor-pointer text-left transition-colors"
+                  onClick={() => { setMenuOpen(false); onDelete(file); }}
+                >
+                  <Trash2 size={13} strokeWidth={1.5} /> Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
