@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { PdfViewer } from '../shared/PdfViewer';
 import { format } from 'date-fns';
 import JSZip from 'jszip';
 import type { FolderRecord } from '../../types/folder';
@@ -297,7 +298,7 @@ function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
             .createSignedUrl(file.storage_path, 3600);
           if (e || !data) throw new Error(e?.message ?? 'Failed to get signed URL');
           setUrl(
-            `https://docs.google.com/viewer?url=${encodeURIComponent(data.signedUrl)}&embedded=true`,
+            `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(data.signedUrl)}`,
           );
         } else {
           const { data, error: e } = await supabase.storage
@@ -439,7 +440,8 @@ function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
               }}
             />
           )}
-          {!loading && !error && url && (isPdf || isOffice) && (
+          {!loading && !error && url && isPdf && <PdfViewer url={url} height={480} />}
+          {!loading && !error && url && isOffice && (
             <iframe
               src={url}
               title={file.name}

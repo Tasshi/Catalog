@@ -20,8 +20,9 @@ import {
   Loader2,
   AlertTriangle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { PdfViewer } from '../components/shared/PdfViewer';
 import type { FileItem } from '../components/layout/ui/cons';
 
 const PAGE_SIZE = 8;
@@ -54,21 +55,41 @@ function FilePreviewModal({
   const [urlLoading, setUrlLoading] = useState(!!storagePath && canPreview);
   const [contentLoading, setContentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!storagePath || !canPreview) return;
     (async () => {
       try {
-        const { data, error: e } = await supabase.storage
-          .from('filevault')
-          .createSignedUrl(storagePath, 3600);
-        if (e || !data) throw new Error(e?.message ?? 'Signed URL failed');
-        const signed = data.signedUrl;
         setContentLoading(true);
-        if (isOffice) {
-          setUrl(`https://docs.google.com/viewer?url=${encodeURIComponent(signed)}&embedded=true`);
+        if (isPdf) {
+          const { data: blob, error: dlErr } = await supabase.storage
+            .from('filevault')
+            .download(storagePath);
+          if (dlErr || !blob) throw new Error(dlErr?.message ?? 'Download failed');
+          if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+          const blobUrl = URL.createObjectURL(blob);
+          blobUrlRef.current = blobUrl;
+          setUrl(blobUrl);
         } else {
-          setUrl(signed);
+          const { data, error: e } = await supabase.storage
+            .from('filevault')
+            .createSignedUrl(storagePath, 3600);
+          if (e || !data) throw new Error(e?.message ?? 'Signed URL failed');
+          const signed = data.signedUrl;
+          if (isOffice) {
+            setUrl(
+              `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(signed)}`,
+            );
+          } else {
+            setUrl(signed);
+          }
         }
       } catch (err) {
         setError(String(err));
@@ -189,15 +210,14 @@ function FilePreviewModal({
               onLoad={() => setContentLoading(false)}
             />
           )}
-          {!urlLoading && !error && url && (isPdf || isOffice) && (
+          {!urlLoading && !error && url && isPdf && <PdfViewer url={url} height={520} />}
+          {!urlLoading && !error && url && isOffice && (
             <div className="relative w-full" style={{ height: 520 }}>
               {contentLoading && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg bg-slate-50">
                   <Loader2 size={22} className="animate-spin text-slate-400" />
                   <span className="text-[12px] text-slate-400">
-                    {isOffice
-                      ? 'Loading document via Google Docs… this may take a moment'
-                      : 'Loading PDF…'}
+                    Loading document via Google Docs… this may take a moment
                   </span>
                 </div>
               )}

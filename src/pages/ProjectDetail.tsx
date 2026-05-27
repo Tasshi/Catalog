@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { PdfViewer } from '../components/shared/PdfViewer';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -617,24 +618,44 @@ function FilePreview({ file, ext }: { file: ProjectFile; ext: string }) {
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(canPreview && !!storagePath);
   const [error, setError] = useState<string | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!storagePath || !canPreview) return;
     (async () => {
       try {
-        const { data, error: e } = await supabase.storage
-          .from('filevault')
-          .createSignedUrl(storagePath, 3600);
-        if (e || !data) throw new Error(e?.message ?? 'Failed to get signed URL');
-        const signed = data.signedUrl;
-        if (isOffice) {
-          setUrl(`https://docs.google.com/viewer?url=${encodeURIComponent(signed)}&embedded=true`);
-        } else if (isText) {
-          const res = await fetch(signed);
-          const raw = await res.text();
-          setText(raw.length > 60000 ? raw.slice(0, 60000) + '\n\n… (preview truncated)' : raw);
+        if (isPdf) {
+          const { data: blob, error: dlErr } = await supabase.storage
+            .from('filevault')
+            .download(storagePath);
+          if (dlErr || !blob) throw new Error(dlErr?.message ?? 'Download failed');
+          if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+          const blobUrl = URL.createObjectURL(blob);
+          blobUrlRef.current = blobUrl;
+          setUrl(blobUrl);
         } else {
-          setUrl(signed);
+          const { data, error: e } = await supabase.storage
+            .from('filevault')
+            .createSignedUrl(storagePath, 3600);
+          if (e || !data) throw new Error(e?.message ?? 'Failed to get signed URL');
+          const signed = data.signedUrl;
+          if (isOffice) {
+            setUrl(
+              `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(signed)}`,
+            );
+          } else if (isText) {
+            const res = await fetch(signed);
+            const raw = await res.text();
+            setText(raw.length > 60000 ? raw.slice(0, 60000) + '\n\n… (preview truncated)' : raw);
+          } else {
+            setUrl(signed);
+          }
         }
       } catch (err) {
         setError(String(err));
@@ -642,7 +663,7 @@ function FilePreview({ file, ext }: { file: ProjectFile; ext: string }) {
         setLoading(false);
       }
     })();
-  }, [storagePath, canPreview, isOffice, isText]);
+  }, [storagePath, canPreview, isOffice, isText, isPdf]);
 
   const cfg = getFileConfig(ext);
 
@@ -683,7 +704,8 @@ function FilePreview({ file, ext }: { file: ProjectFile; ext: string }) {
         style={{ maxHeight: '70vh' }}
       />
     );
-  if (url && (isPdf || isOffice))
+  if (url && isPdf) return <PdfViewer url={url} height={Math.round(window.innerHeight * 0.72)} />;
+  if (url && isOffice)
     return (
       <iframe
         src={url}
