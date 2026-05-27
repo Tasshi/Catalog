@@ -482,21 +482,6 @@ function GroupDropdown({
           className="mt-1 overflow-hidden rounded-lg border border-[#D4DEE9] bg-white"
           style={{ boxShadow: '0 8px 24px rgba(6,27,49,0.12)' }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              onSelect(null);
-              setOpen(false);
-            }}
-            className="flex w-full items-center gap-2.5 border-b border-[#E5EDF5] px-3 py-2.5 text-left text-sm hover:bg-[#F8F7FF]"
-            style={{ background: !selectedGroupId ? '#F8F7FF' : 'white' }}
-          >
-            <div
-              className={`h-2 w-2 flex-shrink-0 rounded-full ${!selectedGroupId ? 'bg-[#533AFD]' : 'bg-[#D4DEE9]'}`}
-            />
-            <span className="flex-1 text-[#061B31]">Personal — don't share</span>
-            {!selectedGroupId && <Check size={13} className="text-[#533AFD]" />}
-          </button>
           {groups.map((g, idx) => {
             const isSel = selectedGroupId === g.id;
             return (

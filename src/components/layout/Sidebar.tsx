@@ -7,7 +7,6 @@ import { Avatar } from './ui';
 
 import {
   LayoutDashboard,
-  Upload,
   Users,
   FolderOpen,
   LogOut,
@@ -49,7 +48,6 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
   const mainNav = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/', adminOnly: true },
     { label: 'My Catalog', icon: FolderOpen, path: '/catalog', adminOnly: false },
-    { label: 'Create Project', icon: Upload, path: '/upload', adminOnly: false },
   ] as const;
 
   const visibleMainNav = mainNav.filter((item) => !item.adminOnly || perms.isAdmin);
