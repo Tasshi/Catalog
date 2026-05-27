@@ -6,9 +6,19 @@ import { getFileExtension, getFileConfig } from '../lib/metadata';
 import { formatBytes } from '../lib/storage';
 import Layout from '../components/layout/Layout';
 import {
-  ArrowLeft, Download, Trash2, Eye, EyeOff,
-  Calendar, HardDrive, Tag, FolderOpen,
-  Users, Loader2, AlertTriangle, ExternalLink,
+  ArrowLeft,
+  Download,
+  Trash2,
+  Eye,
+  EyeOff,
+  Calendar,
+  HardDrive,
+  Tag,
+  FolderOpen,
+  Users,
+  Loader2,
+  AlertTriangle,
+  ExternalLink,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -56,14 +66,27 @@ const db = supabase as any;
 function fmtDate(iso: string | null | undefined, long = false) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('en-GB', long
-      ? { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }
-      : { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch { return '—'; }
+    return new Date(iso).toLocaleDateString(
+      'en-GB',
+      long
+        ? { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+        : { day: 'numeric', month: 'short', year: 'numeric' },
+    );
+  } catch {
+    return '—';
+  }
 }
 
 function initials(name: string) {
-  return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+  return (
+    name
+      .split(' ')
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || '?'
+  );
 }
 
 function hashColor(str: string) {
@@ -75,19 +98,34 @@ function hashColor(str: string) {
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function Avatar({ name, avatarUrl, size = 36 }: { name: string; avatarUrl?: string | null; size?: number }) {
+function Avatar({
+  name,
+  avatarUrl,
+  size = 36,
+}: {
+  name: string;
+  avatarUrl?: string | null;
+  size?: number;
+}) {
   const color = hashColor(name);
   if (avatarUrl) {
     return (
-      <img src={avatarUrl} alt={name}
-        className="rounded-full object-cover shrink-0"
+      <img
+        src={avatarUrl}
+        alt={name}
+        className="shrink-0 rounded-full object-cover"
         style={{ width: size, height: size }}
-        onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = 'none';
+        }}
+      />
     );
   }
   return (
-    <div className="rounded-full shrink-0 flex items-center justify-center text-white font-bold"
-      style={{ width: size, height: size, background: color, fontSize: size * 0.36 }}>
+    <div
+      className="flex shrink-0 items-center justify-center rounded-full font-bold text-white"
+      style={{ width: size, height: size, background: color, fontSize: size * 0.36 }}
+    >
       {initials(name)}
     </div>
   );
@@ -96,23 +134,25 @@ function Avatar({ name, avatarUrl, size = 36 }: { name: string; avatarUrl?: stri
 // ─── FilePreview ──────────────────────────────────────────────────────────────
 
 function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
-  const [url,            setUrl]            = useState<string | null>(null);
-  const [urlLoading,     setUrlLoading]     = useState(true);
-  const [contentLoading, setContentLoading] = useState(false);
-  const [error,          setError]          = useState<string | null>(null);
-  const [visible,        setVisible]        = useState(true);
-
-  const isImage  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
-  const isPdf    = ext === 'pdf';
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+  const isPdf = ext === 'pdf';
   const isOffice = ['xlsx', 'xls', 'docx', 'doc', 'pptx', 'ppt'].includes(ext);
-  const isText   = ['txt', 'md', 'csv', 'json', 'xml', 'html', 'css', 'js', 'ts'].includes(ext);
+  const isText = ['txt', 'md', 'csv', 'json', 'xml', 'html', 'css', 'js', 'ts'].includes(ext);
   const canPreview = isImage || isPdf || isOffice || isText;
 
-  const rawPath     = (file.storage_path ?? file.path) as string | undefined;
-  const storagePath = rawPath?.startsWith('filevault/') ? rawPath.slice('filevault/'.length) : rawPath;
+  const rawPath = (file.storage_path ?? file.path) as string | undefined;
+  const storagePath = rawPath?.startsWith('filevault/')
+    ? rawPath.slice('filevault/'.length)
+    : rawPath;
+
+  const [url, setUrl] = useState<string | null>(null);
+  const [urlLoading, setUrlLoading] = useState(!!storagePath && canPreview);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    if (!storagePath || !canPreview) { setUrlLoading(false); return; }
+    if (!storagePath || !canPreview) return;
 
     (async () => {
       try {
@@ -133,15 +173,17 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
         setUrlLoading(false);
       }
     })();
-  }, [storagePath]);
+  }, [storagePath, canPreview, isOffice]);
 
   const cfg = getFileConfig(ext);
 
   if (!visible) {
     return (
-      <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center h-16">
-        <button onClick={() => setVisible(true)}
-          className="flex items-center gap-2 text-xs text-slate-500 hover:text-violet-600 border-0 bg-transparent cursor-pointer">
+      <div className="flex h-16 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+        <button
+          onClick={() => setVisible(true)}
+          className="flex cursor-pointer items-center gap-2 border-0 bg-transparent text-xs text-slate-500 hover:text-violet-600"
+        >
           <Eye size={13} /> Show preview
         </button>
       </div>
@@ -150,9 +192,11 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
 
   if (!canPreview) {
     return (
-      <div className="bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center py-12 gap-3">
-        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-sm font-bold"
-          style={{ background: cfg.bg, color: cfg.color }}>
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 py-12">
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-xl text-sm font-bold"
+          style={{ background: cfg.bg, color: cfg.color }}
+        >
           {cfg.label.slice(0, 3).toUpperCase()}
         </div>
         <p className="text-[13px] text-slate-400">No preview available for .{ext} files</p>
@@ -161,11 +205,13 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
   }
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
       {/* Preview toolbar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-100">
+      <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Preview</span>
+          <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+            Preview
+          </span>
           {contentLoading && (
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
               <Loader2 size={11} className="animate-spin" />
@@ -173,8 +219,10 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
             </div>
           )}
         </div>
-        <button onClick={() => setVisible(false)}
-          className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
+        <button
+          onClick={() => setVisible(false)}
+          className="flex cursor-pointer items-center gap-1.5 border-0 bg-transparent text-[11px] text-slate-400 hover:text-slate-600"
+        >
           <EyeOff size={11} /> Hide
         </button>
       </div>
@@ -187,42 +235,53 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
           </div>
         )}
         {!urlLoading && error && (
-          <div className="flex flex-col items-center gap-3 py-16 text-center px-6">
+          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
             <AlertTriangle size={22} className="text-amber-400" />
-            <p className="text-[12px] text-slate-500 max-w-xs">Preview unavailable: {error}</p>
+            <p className="max-w-xs text-[12px] text-slate-500">Preview unavailable: {error}</p>
           </div>
         )}
         {!urlLoading && !error && url && isImage && (
-          <img src={url} alt={file.name}
-            className="max-w-full max-h-full object-contain p-4 rounded"
+          <img
+            src={url}
+            alt={file.name}
+            className="max-h-full max-w-full rounded object-contain p-4"
             style={{ maxHeight: 560 }}
-            onLoad={() => setContentLoading(false)} />
+            onLoad={() => setContentLoading(false)}
+          />
         )}
         {!urlLoading && !error && url && (isPdf || isOffice) && (
           <div className="relative w-full" style={{ height: 560 }}>
             {contentLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 z-10">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-50">
                 <Loader2 size={22} className="animate-spin text-slate-400" />
                 <span className="text-[12px] text-slate-400">
-                  {isOffice ? 'Loading document via Google Docs… this may take a moment' : 'Loading PDF…'}
+                  {isOffice
+                    ? 'Loading document via Google Docs… this may take a moment'
+                    : 'Loading PDF…'}
                 </span>
               </div>
             )}
-            <iframe src={url} title={file.name}
-              className="w-full h-full border-none"
-              onLoad={() => setContentLoading(false)} />
+            <iframe
+              src={url}
+              title={file.name}
+              className="h-full w-full border-none"
+              onLoad={() => setContentLoading(false)}
+            />
           </div>
         )}
         {!urlLoading && !error && url && isText && (
           <div className="relative w-full" style={{ height: 400 }}>
             {contentLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50">
                 <Loader2 size={18} className="animate-spin text-slate-400" />
               </div>
             )}
-            <iframe src={url} title={file.name}
-              className="w-full h-full border-none bg-white"
-              onLoad={() => setContentLoading(false)} />
+            <iframe
+              src={url}
+              title={file.name}
+              className="h-full w-full border-none bg-white"
+              onLoad={() => setContentLoading(false)}
+            />
           </div>
         )}
       </div>
@@ -232,18 +291,24 @@ function FilePreview({ file, ext }: { file: FileRecord; ext: string }) {
 
 // ─── MetaRow ──────────────────────────────────────────────────────────────────
 
-function MetaRow({ icon: Icon, label, children }: {
+function MetaRow({
+  icon: Icon,
+  label,
+  children,
+}: {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-slate-50 last:border-0">
-      <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
+    <div className="flex items-start gap-3 border-b border-slate-50 py-3 last:border-0">
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50">
         <Icon size={13} className="text-slate-400" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{label}</p>
+      <div className="min-w-0 flex-1">
+        <p className="mb-0.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+          {label}
+        </p>
         <div className="text-[13px] text-slate-700">{children}</div>
       </div>
     </div>
@@ -255,15 +320,15 @@ function MetaRow({ icon: Icon, label, children }: {
 export default function FileDetail() {
   const { fileId, id } = useParams<{ fileId?: string; id?: string }>();
   const resolvedId = fileId ?? id; // works with both /files/:fileId and /files/:id
-  const navigate     = useNavigate();
-  const { profile }  = useAuth();
+  const navigate = useNavigate();
+  const { profile } = useAuth();
 
-  const [file,     setFile]     = useState<FileRecord | null>(null);
-  const [folder,   setFolder]   = useState<FolderInfo | null>(null);
+  const [file, setFile] = useState<FileRecord | null>(null);
+  const [folder, setFolder] = useState<FolderInfo | null>(null);
   const [uploader, setUploader] = useState<UploaderInfo | null>(null);
-  const [group,    setGroup]    = useState<GroupInfo | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
+  const [group, setGroup] = useState<GroupInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -332,25 +397,29 @@ export default function FileDetail() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [resolvedId]);
 
   // ── Download ───────────────────────────────────────────────────────────────
   async function handleDownload() {
     if (!file) return;
-    const rawDlPath   = (file.storage_path ?? file.path) as string | undefined;
-    const storagePath = rawDlPath?.startsWith('filevault/') ? rawDlPath.slice('filevault/'.length) : rawDlPath;
+    const rawDlPath = (file.storage_path ?? file.path) as string | undefined;
+    const storagePath = rawDlPath?.startsWith('filevault/')
+      ? rawDlPath.slice('filevault/'.length)
+      : rawDlPath;
     if (!storagePath) return;
     setDownloading(true);
     try {
-      const { data, error: e } = await supabase.storage
-        .from('filevault')
-        .download(storagePath);
+      const { data, error: e } = await supabase.storage.from('filevault').download(storagePath);
       if (e || !data) throw new Error(e?.message ?? 'Download failed');
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
-      a.href = url; a.download = file.name;
-      document.body.appendChild(a); a.click();
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -382,7 +451,7 @@ export default function FileDetail() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <div className="flex flex-1 items-center justify-center bg-slate-50">
           <Loader2 size={20} className="animate-spin text-slate-300" />
         </div>
       </Layout>
@@ -392,11 +461,13 @@ export default function FileDetail() {
   if (error || !file) {
     return (
       <Layout>
-        <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <div className="flex flex-1 items-center justify-center bg-slate-50">
           <div className="text-center">
-            <p className="text-sm text-slate-500 mb-3">{error ?? 'File not found.'}</p>
-            <button onClick={() => navigate(-1)}
-              className="text-sm text-violet-600 hover:underline border-0 bg-transparent cursor-pointer">
+            <p className="mb-3 text-sm text-slate-500">{error ?? 'File not found.'}</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="cursor-pointer border-0 bg-transparent text-sm text-violet-600 hover:underline"
+            >
               ← Go back
             </button>
           </div>
@@ -408,22 +479,26 @@ export default function FileDetail() {
   return (
     <Layout>
       <div className="flex-1 overflow-y-auto bg-slate-50">
-
         {/* ── Page header ── */}
-        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
           <div>
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-1">
-              <button onClick={() => navigate('/groups')}
-                className="hover:text-violet-600 border-0 bg-transparent cursor-pointer p-0 text-[11px]">
+            <nav className="mb-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+              <button
+                onClick={() => navigate('/groups')}
+                className="cursor-pointer border-0 bg-transparent p-0 text-[11px] hover:text-violet-600"
+              >
                 Root
               </button>
               {group && (
                 <>
                   <span className="text-slate-300">/</span>
-                  <button onClick={() => navigate(`/groups/${group.id}`)}
-                    className="hover:text-violet-600 border-0 bg-transparent cursor-pointer p-0 text-[11px]">
-                    {group.icon ? `${group.icon} ` : ''}{group.name}
+                  <button
+                    onClick={() => navigate(`/groups/${group.id}`)}
+                    className="cursor-pointer border-0 bg-transparent p-0 text-[11px] hover:text-violet-600"
+                  >
+                    {group.icon ? `${group.icon} ` : ''}
+                    {group.name}
                   </button>
                 </>
               )}
@@ -436,16 +511,20 @@ export default function FileDetail() {
               {folder && (
                 <>
                   <span className="text-slate-300">/</span>
-                  <span className="text-slate-500">{folder.icon ?? '📁'} {folder.name}</span>
+                  <span className="text-slate-500">
+                    {folder.icon ?? '📁'} {folder.name}
+                  </span>
                 </>
               )}
               <span className="text-slate-300">/</span>
-              <span className="text-slate-700 font-medium truncate max-w-[200px]">{file.name}</span>
+              <span className="max-w-[200px] truncate font-medium text-slate-700">{file.name}</span>
             </nav>
 
-            <h1 className="text-[16px] font-semibold text-slate-900 flex items-center gap-2 truncate max-w-xl">
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-bold shrink-0"
-                style={{ background: cfg.bg, color: cfg.color }}>
+            <h1 className="flex max-w-xl items-center gap-2 truncate text-[16px] font-semibold text-slate-900">
+              <span
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-bold"
+                style={{ background: cfg.bg, color: cfg.color }}
+              >
                 {cfg.label.slice(0, 3).toUpperCase()}
               </span>
               {file.name}
@@ -453,19 +532,24 @@ export default function FileDetail() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => navigate(-1)}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+            >
               <ArrowLeft size={13} /> Back
             </button>
 
             <button
               onClick={() => void handleDownload()}
               disabled={downloading}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors disabled:opacity-50">
-              {downloading
-                ? <Loader2 size={13} className="animate-spin" />
-                : <Download size={13} />}
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+            >
+              {downloading ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Download size={13} />
+              )}
               {downloading ? 'Downloading…' : 'Download'}
             </button>
 
@@ -473,7 +557,8 @@ export default function FileDetail() {
               <button
                 onClick={() => void handleDelete()}
                 disabled={deleting}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-red-600 bg-red-50 border border-red-100 hover:bg-red-100 cursor-pointer transition-colors disabled:opacity-50">
+                className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-red-100 bg-red-50 px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+              >
                 {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                 {deleting ? 'Deleting…' : 'Delete'}
               </button>
@@ -483,54 +568,56 @@ export default function FileDetail() {
 
         {/* ── Body ── */}
         <div className="p-6">
-          <div className="flex gap-5 items-start">
-
+          <div className="flex items-start gap-5">
             {/* ── Left: preview ── */}
-            <div className="flex-1 min-w-0 flex flex-col gap-4">
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
               <FilePreview file={file} ext={ext} />
 
               {/* Description card */}
               {file.description && (
-                <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
-                  <h3 className="text-[12px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Description</h3>
-                  <p className="text-[13px] text-slate-700 leading-relaxed">{String(file.description)}</p>
+                <div className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+                  <h3 className="mb-2 text-[12px] font-semibold tracking-wider text-slate-400 uppercase">
+                    Description
+                  </h3>
+                  <p className="text-[13px] leading-relaxed text-slate-700">
+                    {String(file.description)}
+                  </p>
                 </div>
               )}
             </div>
 
             {/* ── Right: metadata sidebar ── */}
-            <div className="w-[300px] shrink-0 flex flex-col gap-4">
-
+            <div className="flex w-[300px] shrink-0 flex-col gap-4">
               {/* File info card */}
-              <div className="bg-white rounded-xl border border-slate-200">
-                <div className="px-5 py-4 border-b border-slate-100">
+              <div className="rounded-xl border border-slate-200 bg-white">
+                <div className="border-b border-slate-100 px-5 py-4">
                   <h2 className="text-[14px] font-semibold text-slate-800">File info</h2>
                 </div>
                 <div className="px-5 py-2">
-
                   <MetaRow icon={HardDrive} label="Size">
                     {formatBytes(Number(file.size_bytes ?? 0))}
                   </MetaRow>
 
                   <MetaRow icon={Tag} label="Type">
-                    <span className="inline-flex items-center h-5 px-2 rounded text-[10px] font-semibold uppercase"
-                      style={{ background: cfg.bg, color: cfg.color }}>
+                    <span
+                      className="inline-flex h-5 items-center rounded px-2 text-[10px] font-semibold uppercase"
+                      style={{ background: cfg.bg, color: cfg.color }}
+                    >
                       {cfg.label}
                     </span>
-                    <span className="text-slate-400 ml-1 text-[12px]">.{ext}</span>
+                    <span className="ml-1 text-[12px] text-slate-400">.{ext}</span>
                   </MetaRow>
 
                   <MetaRow icon={Calendar} label="Uploaded">
-                    <span title={fmtDate(file.created_at, true)}>
-                      {fmtDate(file.created_at)}
-                    </span>
+                    <span title={fmtDate(file.created_at, true)}>{fmtDate(file.created_at)}</span>
                   </MetaRow>
 
                   {folder && (
                     <MetaRow icon={FolderOpen} label="Folder">
                       <button
                         onClick={() => group && navigate(`/groups/${group.id}`)}
-                        className="flex items-center gap-1.5 text-violet-600 hover:underline border-0 bg-transparent cursor-pointer p-0 text-[13px]">
+                        className="flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[13px] text-violet-600 hover:underline"
+                      >
                         {folder.icon ?? '📁'} {folder.name}
                         <ExternalLink size={10} className="text-slate-300" />
                       </button>
@@ -541,19 +628,19 @@ export default function FileDetail() {
                     <MetaRow icon={FolderOpen} label="Cohort">
                       <button
                         onClick={() => navigate(`/groups/${group.id}`)}
-                        className="flex items-center gap-1.5 text-violet-600 hover:underline border-0 bg-transparent cursor-pointer p-0 text-[13px]">
+                        className="flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[13px] text-violet-600 hover:underline"
+                      >
                         {group.icon ?? ''} {group.name}
                         <ExternalLink size={10} className="text-slate-300" />
                       </button>
                     </MetaRow>
                   )}
-
                 </div>
               </div>
 
               {/* Uploader card */}
-              <div className="bg-white rounded-xl border border-slate-200">
-                <div className="px-5 py-4 border-b border-slate-100">
+              <div className="rounded-xl border border-slate-200 bg-white">
+                <div className="border-b border-slate-100 px-5 py-4">
                   <h2 className="text-[14px] font-semibold text-slate-800">Uploaded by</h2>
                 </div>
                 <div className="px-5 py-4">
@@ -565,17 +652,17 @@ export default function FileDetail() {
                         size={38}
                       />
                       <div className="min-w-0">
-                        <p className="text-[13px] font-medium text-slate-700 truncate">
+                        <p className="truncate text-[13px] font-medium text-slate-700">
                           {uploader.full_name ?? 'Unknown user'}
                         </p>
                         {uploader.email && (
-                          <p className="text-[11px] text-slate-400 truncate">{uploader.email}</p>
+                          <p className="truncate text-[11px] text-slate-400">{uploader.email}</p>
                         )}
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 py-2">
-                      <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-100 bg-slate-50">
                         <Users size={14} className="text-slate-300" />
                       </div>
                       <p className="text-[13px] text-slate-400">Unknown uploader</p>
@@ -585,11 +672,14 @@ export default function FileDetail() {
               </div>
 
               {/* File ID (dev utility) */}
-              <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">File ID</p>
-                <p className="text-[11px] font-mono text-slate-400 break-all select-all">{file.id}</p>
+              <div className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+                <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  File ID
+                </p>
+                <p className="font-mono text-[11px] break-all text-slate-400 select-all">
+                  {file.id}
+                </p>
               </div>
-
             </div>
           </div>
         </div>
