@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../hooks/useGroups';
 import { usePermissions } from '../../hooks/Usepermissions';
 import { Avatar } from './ui';
-import logoImage from '../../assets/Logo.png';
 
 import {
   LayoutDashboard,
@@ -65,7 +64,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             // style={{ background: 'linear-gradient(135deg, #533AFD, #FF6118)' }}
           >
             <img
-              src={logoImage}
+              src="/Logo.png"
               alt="Pelsung Logo"
               style={{ width: '32px', height: '32px', objectFit: 'contain' }}
             />
