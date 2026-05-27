@@ -25,7 +25,7 @@ const pillBase = [
   'inline-flex items-center h-7 px-3 rounded-full text-xs font-medium',
   'transition-all duration-150 cursor-pointer border whitespace-nowrap',
 ].join(' ');
-const pillActive   = 'text-white border-transparent [background:linear-gradient(to_right,#FF9A00,#FF6B00,#E85500)] shadow-sm';
+const pillActive   = 'text-white border-transparent bg-[#054159] shadow-sm';
 const pillInactive = 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900';
 
 interface MiniCohort { id: string; name: string; }

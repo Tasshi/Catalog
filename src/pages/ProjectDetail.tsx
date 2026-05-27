@@ -316,23 +316,23 @@ function FilePreview({ file, ext }: { file: ProjectFile; ext: string }) {
 
   useEffect(() => {
     if (!storagePath || !canPreview) return;
-    let objectUrl: string | null = null;
     (async () => {
       try {
-        if (isOffice || isVideo || isAudio) {
-          const { data, error: e } = await supabase.storage.from('filevault').createSignedUrl(storagePath, 3600);
-          if (e || !data) throw new Error(e?.message ?? 'Failed');
-          setUrl(isOffice ? `https://docs.google.com/viewer?url=${encodeURIComponent(data.signedUrl)}&embedded=true` : data.signedUrl);
+        const { data, error: e } = await supabase.storage.from('filevault').createSignedUrl(storagePath, 3600);
+        if (e || !data) throw new Error(e?.message ?? 'Failed to get signed URL');
+        const signed = data.signedUrl;
+        if (isOffice) {
+          setUrl(`https://docs.google.com/viewer?url=${encodeURIComponent(signed)}&embedded=true`);
+        } else if (isText) {
+          const res = await fetch(signed);
+          const raw = await res.text();
+          setText(raw.length > 60000 ? raw.slice(0, 60000) + '\n\n… (preview truncated)' : raw);
         } else {
-          const { data, error: e } = await supabase.storage.from('filevault').download(storagePath);
-          if (e || !data) throw new Error(e?.message ?? 'Failed');
-          if (isText) { const raw = await (data as Blob).text(); setText(raw.length > 60000 ? raw.slice(0, 60000) + '\n\n… (preview truncated)' : raw); }
-          else { objectUrl = URL.createObjectURL(data); setUrl(objectUrl); }
+          setUrl(signed);
         }
       } catch (err) { setError(String(err)); } finally { setLoading(false); }
     })();
-    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [storagePath, canPreview, isOffice, isVideo, isAudio, isText]);
+  }, [storagePath, canPreview, isOffice, isText]);
 
   const cfg = getFileConfig(ext);
 
@@ -695,15 +695,15 @@ export default function ProjectDetail() {
               {canEdit && activeFolder && (
                 <button onClick={() => setShowSubFolderModal(true)}
                   className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold text-white border-0 cursor-pointer transition-all hover:-translate-y-px"
-                  style={{ background: 'linear-gradient(to right, #FF9A00, #FF6B00, #E85500)', boxShadow: '0 4px 14px rgba(255,100,0,0.35)' }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(255,120,0,0.5)')}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(255,100,0,0.35)')}>
+                  style={{ background: '#054159', boxShadow: '0 4px 14px rgba(5,65,89,0.35)' }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(5,65,89,0.5)')}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(5,65,89,0.35)')}>
                   <FolderPlus size={13} /> New Sub-folder
                 </button>
               )}
               <button onClick={() => navigate('/upload')}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold text-white border-0 cursor-pointer transition-all hover:-translate-y-px"
-                style={{ background: 'linear-gradient(to right, #FF9A00, #FF6B00, #E85500)', boxShadow: '0 4px 14px rgba(255,100,0,0.35)' }}
+                style={{ background: '#054159', boxShadow: '0 4px 14px rgba(5,65,89,0.35)' }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(255,120,0,0.5)')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(255,100,0,0.35)')}>
                 Create Project
@@ -768,7 +768,7 @@ export default function ProjectDetail() {
                             onClick={() => fileInputRef.current?.click()}
                             disabled={inlineUploading}
                             className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[11px] font-medium text-white border-0 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed hover:-translate-y-px"
-                            style={{ background: 'linear-gradient(to right, #FF9A00, #FF6B00, #E85500)', boxShadow: '0 2px 8px rgba(255,100,0,0.3)' }}
+                            style={{ background: '#054159', boxShadow: '0 2px 8px rgba(5,65,89,0.3)' }}
                           >
                             {inlineUploading
                               ? <><Loader2 size={11} className="animate-spin" /> Uploading…</>
@@ -819,7 +819,7 @@ export default function ProjectDetail() {
             ) : (
               <div className="bg-white rounded-xl border border-slate-200">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                  <div><h2 className="text-[14px] font-semibold text-slate-800">{activeFolder ? 'Sub-folders' : 'Projects'}</h2><p className="text-[12px] text-slate-400 mt-0.5">{foldersLoading ? 'Loading…' : `${currentTiles.length} folder${currentTiles.length !== 1 ? 's' : ''}`}</p></div>
+                  <div><h2 className="text-[14px] font-semibold text-slate-800">{activeFolder ? 'Sub-folders' : 'Projects'}</h2><p className="text-[12px] text-slate-400 mt-0.5">{foldersLoading ? 'Loading…' : `${visibleTiles.length} folder${visibleTiles.length !== 1 ? 's' : ''}${filterCohortName ? ` · ${currentTiles.length} total` : ''}`}</p></div>
                 </div>
                 <div className="p-6">
                   {foldersLoading ? (
@@ -841,7 +841,7 @@ export default function ProjectDetail() {
                               : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900',
                           ].join(' ')}
                           style={filterCohortName === null
-                            ? { background: 'linear-gradient(to right, #FF9A00, #FF6B00, #E85500)', boxShadow: '0 4px 12px rgba(255,100,0,0.35)' }
+                            ? { background: '#054159', boxShadow: '0 4px 12px rgba(5,65,89,0.35)' }
                             : {}}>
                           All
                         </button>
@@ -867,7 +867,7 @@ export default function ProjectDetail() {
                                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900',
                                 ].join(' ')}
                                 style={isActive
-                                  ? { background: 'linear-gradient(to right, #FF9A00, #FF6B00, #E85500)', boxShadow: '0 4px 12px rgba(255,100,0,0.35)' }
+                                  ? { background: '#054159', boxShadow: '0 4px 12px rgba(5,65,89,0.35)' }
                                   : {}}>
                                 {mc.name}
                                 {cohortFileCount > 0 && (

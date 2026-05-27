@@ -180,14 +180,14 @@ export default function ChangePassword() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                style={canSubmit ? { background: '#EB5800' } : undefined}
+                style={canSubmit ? { background: '#054159' } : undefined}
                 className={`w-full py-2.5 rounded-lg text-sm font-medium border-none cursor-pointer transition-all duration-150 ${
                   canSubmit
                     ? 'text-white hover:opacity-90 active:scale-[0.98]'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 }`}
-                onMouseEnter={e => { if (canSubmit) e.currentTarget.style.background = '#CC4D00'; }}
-                onMouseLeave={e => { if (canSubmit) e.currentTarget.style.background = '#EB5800'; }}
+                onMouseEnter={e => { if (canSubmit) e.currentTarget.style.background = '#0a5c6f'; }}
+                onMouseLeave={e => { if (canSubmit) e.currentTarget.style.background = '#054159'; }}
               >
                 {loading ? 'Updating…' : 'Update password'}
               </button>

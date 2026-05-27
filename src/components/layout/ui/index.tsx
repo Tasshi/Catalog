@@ -6,7 +6,7 @@ export function Button({ variant = 'primary', children, className = '', type = '
 
   const variants: Record<string, string> = {
     // Primary: #533AFD bg, white text, 4px radius, h-10 (~40px for compact use), hover #4329E8, active scale
-    primary:   'bg-gradient-to-r from-[#FF9A00] via-[#FF6B00] to-[#E85500] hover:from-[#FFB020] hover:via-[#FF8020] hover:to-[#FF5500] active:from-[#E58800] active:to-[#CC4400] active:scale-[0.98] text-white font-bold border-0 px-6 h-10 shadow-[0_4px_18px_rgba(255,100,0,0.35)] hover:shadow-[0_8px_28px_rgba(255,120,0,0.45)] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed',
+    primary:   'bg-[#054159] hover:bg-[#0a5c6f] active:bg-[#043347] active:scale-[0.98] text-white font-bold border-0 px-6 h-10 shadow-[0_4px_18px_rgba(5,65,89,0.35)] hover:shadow-[0_8px_28px_rgba(5,65,89,0.45)] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed',
     // Secondary: white bg, #533AFD border + text, hover #F3F0FF bg
     secondary: 'bg-white hover:bg-[#F3F0FF] active:bg-[#E8E9FF] text-[#533AFD] border border-[#533AFD] hover:border-[#4329E8] active:border-[#3720D4] px-6 h-10',
     // Ghost: transparent, #533AFD text, hover purple tint bg

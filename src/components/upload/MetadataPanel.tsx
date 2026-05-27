@@ -26,6 +26,7 @@ interface MetadataPanelProps {
   uploading:         boolean;
   progress:          number;
   currentFolderId?:  string | null;
+  currentGroupId?:   string | null;
 }
 
 // ── Mini Cohort Picker ─────────────────────────────────────────────────────
@@ -310,13 +311,13 @@ function MembersSection({ groupId }: { groupId: string }) {
 
 // ── MetadataPanel ──────────────────────────────────────────────────────────
 
-export default function MetadataPanel({ files, onSubmit, uploading, progress, currentFolderId = null }: MetadataPanelProps) {
+export default function MetadataPanel({ files, onSubmit, uploading, progress, currentFolderId = null, currentGroupId = null }: MetadataPanelProps) {
   const { groups, loading: groupsLoading }          = useGroups() as { groups: Group[]; loading: boolean };
   const { userGroupIds, loading: userGroupLoading } = useUserGroupIds();
 
   const [projectName,        setProjectName]        = useState('');
   const [description,        setDescription]        = useState('');
-  const [selectedGroupId,    setSelectedGroupId]    = useState<string | null>(null);
+  const [selectedGroupId,    setSelectedGroupId]    = useState<string | null>(currentGroupId);
   const [selectedSubGroupId, setSelectedSubGroupId] = useState<string | null>(null);
   const [selectedMiniCohortId, setSelectedMiniCohortId] = useState<string | null>(null);
   const [validationError,    setValidationError]    = useState('');
@@ -368,7 +369,7 @@ export default function MetadataPanel({ files, onSubmit, uploading, progress, cu
       )}
 
       {/* Cohort selector */}
-      <FormField label={isProjectMode ? 'Cohort (required for project)' : 'Share with Cohort'}>
+      <FormField label={isProjectMode ? 'Cohort (required for project)' : 'Select Cohort'}>
         {groupsLoading || userGroupLoading ? (
           <div className="flex items-center gap-2 py-2"><Loader2 size={14} className="animate-spin text-[#533AFD]" /><span className="text-sm text-[#64748D]">Loading cohorts…</span></div>
         ) : (

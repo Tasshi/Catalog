@@ -300,7 +300,7 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
     <Modal
       open={open}
       onClose={handleClose}
-      title="Create new group"
+      title="Create new Cohort"
       size="lg"
       footer={
         <div className="flex gap-2 justify-end">
@@ -314,7 +314,7 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
         {/* Group name */}
         <div>
           <label className="text-xs font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text3)' }}>
-            Project name <span style={{ color: '#f87171' }}>*</span>
+            Cohort name <span style={{ color: '#f87171' }}>*</span>
           </label>
           <input
             className="form-input w-full"

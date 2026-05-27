@@ -24,6 +24,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
   const perms                = usePermissions();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cohortsExpanded, setCohortsExpanded] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -113,7 +114,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             </div>
 
             <button
-              onClick={() => { if (!onGroupsPage) navigate('/groups'); onSelectGroup?.(null); }}
+              onClick={() => { if (!onGroupsPage) navigate('/groups'); onSelectGroup?.(null); setCohortsExpanded(e => !e); }}
               className={`group flex items-center gap-2 w-full px-3 py-2.5 rounded-[6px] border-none cursor-pointer text-sm font-normal leading-4 text-left transition-colors duration-150 ${
                 onGroupsPage && selectedGroupId === null
                   ? 'bg-[#054159] text-white'
@@ -126,12 +127,12 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
                 className={`flex-shrink-0 transition-colors duration-150 ${onGroupsPage && selectedGroupId === null ? 'text-white' : 'text-slate-500 group-hover:text-white'}`}
               />
               <span className="flex-1">All Cohorts</span>
-              {onGroupsPage && groups.length > 0 && (
-                <ChevronDown size={12} className={`flex-shrink-0 group-hover:text-white/70 ${onGroupsPage && selectedGroupId === null ? 'text-white/70' : 'text-slate-400'}`} />
+              {groups.length > 0 && (
+                <ChevronDown size={12} className={`flex-shrink-0 transition-transform duration-200 group-hover:text-white/70 ${cohortsExpanded ? 'rotate-180' : ''} ${onGroupsPage && selectedGroupId === null ? 'text-white/70' : 'text-slate-400'}`} />
               )}
             </button>
 
-            {onGroupsPage && groups.map((group) => {
+            {cohortsExpanded && groups.map((group) => {
               const isActive = selectedGroupId === group.id;
               return (
                 <button

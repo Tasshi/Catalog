@@ -191,7 +191,7 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
     <Modal
       open={open}
       onClose={handleClose}
-      title="Create new group"
+      title="Create new cohort"
       size="lg"
       footer={
         <div className="flex gap-2 justify-end">

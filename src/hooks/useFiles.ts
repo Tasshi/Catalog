@@ -32,26 +32,38 @@ async function fetchFilesQuery(userId: string, groupId: string | null): Promise<
     return mapFiles(data ?? []);
   }
 
-  const { data: memberships, error: memberError } = await db
-    .from('group_members').select('group_id').eq('user_id', userId);
-  if (memberError) throw new Error(memberError.message);
-
-  const memberGroupIds: string[] = (memberships ?? []).map((m: { group_id: string }) => m.group_id);
-
   const { data: ownFiles, error: e1 } = await db
     .from('files').select(SELECT)
     .eq('is_deleted', false).eq('uploaded_by', userId)
     .order('created_at', { ascending: false });
   if (e1) throw new Error(e1.message);
 
+  // Use the same group visibility as useGroups — no user filter, RLS controls access.
+  // This is intentional: group_members only tracks explicit membership rows, but the
+  // groups table (and its RLS) is the authoritative source for what groups are visible.
+  const { data: visibleGroups } = await db.from('groups').select('id');
+  const visibleGroupIds: string[] = (visibleGroups ?? []).map((g: { id: string }) => g.id);
+
   let groupFiles: FileRecord[] = [];
-  if (memberGroupIds.length > 0) {
+  if (visibleGroupIds.length > 0) {
     const { data: gf, error: e2 } = await db
       .from('files').select(SELECT)
-      .eq('is_deleted', false).in('group_id', memberGroupIds)
+      .eq('is_deleted', false).in('group_id', visibleGroupIds)
       .order('created_at', { ascending: false });
     if (e2) throw new Error(e2.message);
     groupFiles = (gf ?? []) as FileRecord[];
+
+    // Also pick up files uploaded into a subproject folder but with group_id = null.
+    const { data: folderRows } = await db
+      .from('subprojects').select('id').in('group_id', visibleGroupIds);
+    const folderIds: string[] = (folderRows ?? []).map((r: { id: string }) => r.id);
+    if (folderIds.length > 0) {
+      const { data: ff } = await db
+        .from('files').select(SELECT)
+        .eq('is_deleted', false).in('folder_id', folderIds)
+        .order('created_at', { ascending: false });
+      groupFiles = [...groupFiles, ...((ff ?? []) as FileRecord[])];
+    }
   }
 
   const merged = [...(ownFiles ?? []), ...groupFiles];

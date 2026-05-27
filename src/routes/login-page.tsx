@@ -67,7 +67,7 @@ export const LoginPage = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={signIn.isPending}>
+              <Button type="submit" className="w-full bg-[#054159] text-white hover:bg-[#0a5c6f]" disabled={signIn.isPending}>
                 {signIn.isPending ? 'Signing in…' : 'Sign in'}
               </Button>
               {signIn.isError ? (

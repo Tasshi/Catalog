@@ -45,9 +45,9 @@ export default function FilterPanel({
                 'border transition-all duration-150 select-none cursor-pointer',
                 isActive
                   ? 'text-white border-transparent shadow-md'
-                  : 'bg-white text-[#64748D] border-[#D4DEE9] hover:border-[#FF9A00] hover:text-[#FF6B00]',
+                  : 'bg-white text-[#64748D] border-[#D4DEE9] hover:border-[#054159] hover:text-[#054159]',
               ].join(' ')}
-              style={isActive ? { background: 'linear-gradient(to right, #FF9A00, #FF6B00, #E85500)', boxShadow: '0 4px 12px rgba(255,100,0,0.35)' } : {}}
+              style={isActive ? { background: '#054159', boxShadow: '0 4px 12px rgba(5,65,89,0.35)' } : {}}
             >
               {t}
             </button>
@@ -74,7 +74,7 @@ export default function FilterPanel({
               'shadow-[0px_1px_2px_rgba(0,0,0,0.04)]',
               'outline-none cursor-pointer',
               'hover:border-[#B8CCDB]',
-              'focus:border-[#FF6B00] focus:shadow-[0px_0px_0px_3px_rgba(255,107,0,0.12)]',
+              'focus:border-[#054159] focus:shadow-[0px_0px_0px_3px_rgba(5,65,89,0.12)]',
               'transition-all duration-150',
             ].join(' ')}
           >

@@ -20,7 +20,7 @@ const pillBase = [
   'transition-all duration-150 cursor-pointer border whitespace-nowrap',
 ].join(' ');
 
-const pillActive   = 'text-white border-transparent shadow-md [background:linear-gradient(to_right,#FF9A00,#FF6B00,#E85500)] [box-shadow:0_4px_12px_rgba(255,100,0,0.35)]';
+const pillActive   = 'text-white border-transparent shadow-md bg-[#054159] [box-shadow:0_4px_12px_rgba(5,65,89,0.35)]';
 const pillInactive = 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900';
 
 // ─── Component ────────────────────────────────────────────────────────────────

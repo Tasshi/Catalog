@@ -32,7 +32,7 @@ const selectStyle: React.CSSProperties = {
   backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
 };
 const primaryBtn: React.CSSProperties = {
-  width: '100%', height: 48, borderRadius: 12, border: 'none', background: '#EB5800',
+  width: '100%', height: 48, borderRadius: 12, border: 'none', background: '#054159',
   color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8,
   transition: 'background 0.15s',
 };
@@ -360,8 +360,8 @@ export default function Settings() {
             <button
               onClick={handleSave} disabled={saving}
               style={{ ...primaryBtn, opacity: saving ? 0.7 : 1 }}
-              onMouseEnter={e => { if (!saving) (e.currentTarget.style.background = '#CC4D00'); }}
-              onMouseLeave={e => (e.currentTarget.style.background = '#EB5800')}
+              onMouseEnter={e => { if (!saving) (e.currentTarget.style.background = '#0a5c6f'); }}
+              onMouseLeave={e => (e.currentTarget.style.background = '#054159')}
             >
               {saving ? 'Saving…' : 'Save changes'}
             </button>

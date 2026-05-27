@@ -91,14 +91,14 @@ function IconCheck() {
 const btnCls =
   'w-full py-3 rounded-xl text-sm font-bold text-white tracking-wide cursor-pointer ' +
   'transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed ' +
-  'bg-gradient-to-r from-[#FF9A00] via-[#FF6B00] to-[#E85500] ' +
-  'hover:from-[#FFB020] hover:via-[#FF8020] hover:to-[#FF5500] ' +
-  'active:from-[#E58800] active:to-[#CC4400] ' +
+  'bg-[#054159] ' +
+  'hover:bg-[#0a5c6f] ' +
+  'active:bg-[#043347] ' +
   'hover:-translate-y-px ' +
   '[border:2px_solid_rgba(255,255,255,0.5)] ' +
   'hover:[border-color:rgba(255,255,255,0.85)] ' +
-  'shadow-[0_4px_18px_rgba(255,100,0,0.35)] ' +
-  'hover:shadow-[0_8px_28px_rgba(255,120,0,0.45),0_0_12px_rgba(255,255,255,0.2)]';
+  'shadow-[0_4px_18px_rgba(5,65,89,0.35)] ' +
+  'hover:shadow-[0_8px_28px_rgba(5,65,89,0.45)]';
 
 const inputCls =
   'w-full pl-9 pr-4 py-2.5 rounded-xl ' +

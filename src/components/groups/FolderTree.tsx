@@ -150,7 +150,7 @@ function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
   const isPdf = ext === 'pdf';
   const isOffice = ['xlsx','xls','docx','doc','pptx','ppt'].includes(ext);
 
-  useState(() => {
+  useEffect(() => {
     (async () => {
       try {
         const { supabase } = await import('../../lib/supabase');
@@ -165,7 +165,7 @@ function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
         }
       } catch (err) { setError(String(err)); } finally { setLoading(false); }
     })();
-  });
+  }, []);
 
   function handleBackdrop(e: React.MouseEvent<HTMLDivElement>) { if (e.target === e.currentTarget) onClose(); }
 

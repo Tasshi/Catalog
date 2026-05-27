@@ -23,6 +23,7 @@ export default function Upload() {
   const { folderId: folderIdFromRoute } = useParams<{ folderId?: string }>();
   const { state } = useLocation();
   const currentFolderId = folderIdFromRoute ?? state?.folderId ?? null;
+  const currentGroupId  = (state?.groupId ?? null) as string | null;
 
   function handleFilesSelected(incoming: File[]) {
     setSelectedFiles(prev => {
@@ -136,6 +137,7 @@ export default function Upload() {
             uploading={uploading}
             progress={progress}
             currentFolderId={currentFolderId}
+            currentGroupId={currentGroupId}
           />
         </div>
       </div>
