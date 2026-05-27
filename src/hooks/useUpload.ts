@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { uploadFile as storageUpload } from '../lib/storage';
 import { extractAutoMetadata } from '../lib/metadata';
@@ -9,25 +10,26 @@ const db = supabase as any;
 
 export function useUpload() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   async function uploadFile({
-  file,
-  description,
-  tags,
-  groupId,
-  folderId,
-  miniCohortId,
-}: {
-  file:          File;
-  description?:  string;
-  tags?:         string[];
-  groupId?:      string | null;
-  folderId?:     string | null;
-  miniCohortId?: string | null;  // ← add this
-}) {
+    file,
+    description,
+    tags,
+    groupId,
+    folderId,
+    miniCohortId,
+  }: {
+    file: File;
+    description?: string;
+    tags?: string[];
+    groupId?: string | null;
+    folderId?: string | null;
+    miniCohortId?: string | null; // ← add this
+  }) {
     if (!user || !file) return;
     setUploading(true);
     setProgress(0);
@@ -42,33 +44,34 @@ export function useUpload() {
       // a brand-new path, so duplicates cannot occur at the DB level.
       // folder_id is set only when explicitly provided; null = file stays
       // at root without triggering autoSortFile to create an unwanted folder.
-      const { data, error: insertError } = await db
+      const { data, error: insertError } = (await db
         .from('files')
         .insert({
-            name:           auto.name,
-            file_type:      auto.fileType,
-            size_bytes:     auto.sizeBytes,
-            storage_path:   storagePath,
-            description:    description || null,
-            tags:           tags || [],
-            group_id:       groupId       || null,
-            folder_id:      folderId      || null,
-            mini_cohort_id: miniCohortId  || null,  // ← add this
-            uploaded_by:    user.id,
-            version:        1,
-          })
+          name: auto.name,
+          file_type: auto.fileType,
+          size_bytes: auto.sizeBytes,
+          storage_path: storagePath,
+          description: description || null,
+          tags: tags || [],
+          group_id: groupId || null,
+          folder_id: folderId || null,
+          mini_cohort_id: miniCohortId || null, // ← add this
+          uploaded_by: user.id,
+          version: 1,
+        })
         .select()
-        .single() as { data: { id: string } | null; error: unknown };
+        .single()) as { data: { id: string } | null; error: unknown };
 
       if (insertError) throw insertError;
 
       await db.from('audit_logs').insert({
         file_id: data!.id,
         user_id: user.id,
-        action:  'upload',
+        action: 'upload',
       });
 
       setProgress(100);
+      void queryClient.invalidateQueries({ queryKey: ['files'] });
       return data;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Upload failed';
