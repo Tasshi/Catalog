@@ -155,7 +155,10 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
                 return (
                   <button
                     key={group.id}
-                    onClick={() => onSelectGroup?.(group)}
+                    onClick={() => {
+                      navigate(`/groups/${group.id}`);
+                      onSelectGroup?.(group);
+                    }}
                     className={`group flex w-full cursor-pointer items-center gap-2 rounded-[6px] border-none py-2 pr-3 pl-8 text-left text-[13px] leading-4 font-normal transition-colors duration-150 ${
                       isActive
                         ? 'bg-[#054159] text-white'
