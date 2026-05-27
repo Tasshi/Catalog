@@ -67,7 +67,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             <img
               src={logoImage}
               alt="Pelsung Logo"
-              style={{ width: '400px', opacity: 0.75, mixBlendMode: 'multiply' }}
+              style={{ width: '32px', height: '32px', objectFit: 'contain' }}
             />
           </div>
           <div>
