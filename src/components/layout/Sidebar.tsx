@@ -4,12 +4,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../hooks/useGroups';
 import { usePermissions } from '../../hooks/Usepermissions';
 import { Avatar } from './ui';
+import logoImage from '../../assets/Logo.png';
 
 import {
-  LayoutDashboard, Upload, Users, FolderOpen, LogOut, Settings, ChevronDown, KeyRound,
+  LayoutDashboard,
+  Upload,
+  Users,
+  FolderOpen,
+  LogOut,
+  Settings,
+  ChevronDown,
+  KeyRound,
 } from 'lucide-react';
 import type { Group } from './ui/cons';
-
 
 interface SidebarProps {
   selectedGroupId?: string | null;
@@ -17,11 +24,11 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ selectedGroupId = null, onSelectGroup }: SidebarProps) {
-  const navigate             = useNavigate();
-  const location             = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { profile, signOut } = useAuth();
-  const { groups }           = useGroups();
-  const perms                = usePermissions();
+  const { groups } = useGroups();
+  const perms = usePermissions();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cohortsExpanded, setCohortsExpanded] = useState(true);
@@ -41,29 +48,31 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
   const onGroupsPage = location.pathname.startsWith('/groups');
 
   const mainNav = [
-    { label: 'Dashboard',  icon: LayoutDashboard, path: '/',        adminOnly: true  },
-    { label: 'My Catalog', icon: FolderOpen,       path: '/catalog', adminOnly: false },
-    { label: 'Create Project',     icon: Upload,            path: '/upload',  adminOnly: false },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/', adminOnly: true },
+    { label: 'My Catalog', icon: FolderOpen, path: '/catalog', adminOnly: false },
+    { label: 'Create Project', icon: Upload, path: '/upload', adminOnly: false },
   ] as const;
 
-  const visibleMainNav = mainNav.filter(item => !item.adminOnly || perms.isAdmin);
+  const visibleMainNav = mainNav.filter((item) => !item.adminOnly || perms.isAdmin);
 
   return (
-    <aside className="w-[220px] flex-shrink-0 flex flex-col bg-white border-r border-slate-200">
-
+    <aside className="flex w-[220px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
       {/* ── Logo ── */}
-      <div className="px-5 pt-5 pb-4 border-b border-slate-100">
+      <div className="border-b border-slate-100 px-5 pt-5 pb-4">
         <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-[6px] flex items-center justify-center text-base flex-shrink-0"
-            // style={{ background: 'linear-gradient(135deg, #533AFD, #FF6118)' }} 
-            
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[6px] text-base"
+            // style={{ background: 'linear-gradient(135deg, #533AFD, #FF6118)' }}
           >
-            <img src="/src/assets/Logo.png" alt="react logo" style={{ width: '400px', opacity: 0.75, mixBlendMode: 'multiply' }} />
+            <img
+              src={logoImage}
+              alt="Pelsung Logo"
+              style={{ width: '400px', opacity: 0.75, mixBlendMode: 'multiply' }}
+            />
           </div>
           <div>
-            <div className="text-base font-normal leading-[18.4px] text-slate-900">Pelsung</div>
-            <div className="text-[11px] font-normal text-slate-400 uppercase tracking-widest mt-0.5">
+            <div className="text-base leading-[18.4px] font-normal text-slate-900">Pelsung</div>
+            <div className="mt-0.5 text-[11px] font-normal tracking-widest text-slate-400 uppercase">
               Repository
             </div>
           </div>
@@ -71,10 +80,9 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 p-2 flex flex-col gap-0.5 overflow-y-auto">
-
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
         {/* MAIN */}
-        <div className="text-[11px] font-normal text-slate-400 uppercase tracking-widest px-2 pt-4 pb-1.5 leading-3">
+        <div className="px-2 pt-4 pb-1.5 text-[11px] leading-3 font-normal tracking-widest text-slate-400 uppercase">
           Main
         </div>
 
@@ -84,7 +92,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`group flex items-center gap-2 w-full px-3 py-2.5 rounded-[6px] border-none cursor-pointer text-sm font-normal leading-4 text-left transition-colors duration-150 ${
+              className={`group flex w-full cursor-pointer items-center gap-2 rounded-[6px] border-none px-3 py-2.5 text-left text-sm leading-4 font-normal transition-colors duration-150 ${
                 isActive
                   ? 'bg-[#054159] text-white'
                   : 'bg-transparent text-slate-700 hover:bg-[#054159] hover:text-white'
@@ -98,7 +106,9 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
               <span className="flex-1">{label}</span>
 
               {path === '/catalog' && !perms.isAdmin && (
-                <span className={`text-[10px] rounded px-1 py-0.5 leading-none flex-shrink-0 ${isActive ? 'bg-white/20 text-white/80' : 'text-slate-400 bg-slate-100 group-hover:bg-white/20 group-hover:text-white/80'}`}>
+                <span
+                  className={`flex-shrink-0 rounded px-1 py-0.5 text-[10px] leading-none ${isActive ? 'bg-white/20 text-white/80' : 'bg-slate-100 text-slate-400 group-hover:bg-white/20 group-hover:text-white/80'}`}
+                >
                   view
                 </span>
               )}
@@ -109,13 +119,17 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
         {/* TEAM */}
         {perms.canViewGroups && (
           <>
-            <div className="text-[11px] font-normal text-slate-400 uppercase tracking-widest px-2 pt-4 pb-1.5 leading-3">
+            <div className="px-2 pt-4 pb-1.5 text-[11px] leading-3 font-normal tracking-widest text-slate-400 uppercase">
               Team
             </div>
 
             <button
-              onClick={() => { if (!onGroupsPage) navigate('/groups'); onSelectGroup?.(null); setCohortsExpanded(e => !e); }}
-              className={`group flex items-center gap-2 w-full px-3 py-2.5 rounded-[6px] border-none cursor-pointer text-sm font-normal leading-4 text-left transition-colors duration-150 ${
+              onClick={() => {
+                if (!onGroupsPage) navigate('/groups');
+                onSelectGroup?.(null);
+                setCohortsExpanded((e) => !e);
+              }}
+              className={`group flex w-full cursor-pointer items-center gap-2 rounded-[6px] border-none px-3 py-2.5 text-left text-sm leading-4 font-normal transition-colors duration-150 ${
                 onGroupsPage && selectedGroupId === null
                   ? 'bg-[#054159] text-white'
                   : 'bg-transparent text-slate-700 hover:bg-[#054159] hover:text-white'
@@ -128,48 +142,50 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
               />
               <span className="flex-1">All Cohorts</span>
               {groups.length > 0 && (
-                <ChevronDown size={12} className={`flex-shrink-0 transition-transform duration-200 group-hover:text-white/70 ${cohortsExpanded ? 'rotate-180' : ''} ${onGroupsPage && selectedGroupId === null ? 'text-white/70' : 'text-slate-400'}`} />
+                <ChevronDown
+                  size={12}
+                  className={`flex-shrink-0 transition-transform duration-200 group-hover:text-white/70 ${cohortsExpanded ? 'rotate-180' : ''} ${onGroupsPage && selectedGroupId === null ? 'text-white/70' : 'text-slate-400'}`}
+                />
               )}
             </button>
 
-            {cohortsExpanded && groups.map((group) => {
-              const isActive = selectedGroupId === group.id;
-              return (
-                <button
-                  key={group.id}
-                  onClick={() => onSelectGroup?.(group)}
-                  className={`group flex items-center gap-2 w-full pl-8 pr-3 py-2 rounded-[6px] border-none cursor-pointer text-[13px] font-normal leading-4 text-left transition-colors duration-150 ${
-                    isActive
-                      ? 'bg-[#054159] text-white'
-                      : 'bg-transparent text-slate-600 hover:bg-[#054159] hover:text-white'
-                  }`}
-                >
-                  <span className="truncate">
-                    {group.icon ? `${group.icon} ` : ''}{group.name}
-                  </span>
-                </button>
-              );
-            })}
-
+            {cohortsExpanded &&
+              groups.map((group) => {
+                const isActive = selectedGroupId === group.id;
+                return (
+                  <button
+                    key={group.id}
+                    onClick={() => onSelectGroup?.(group)}
+                    className={`group flex w-full cursor-pointer items-center gap-2 rounded-[6px] border-none py-2 pr-3 pl-8 text-left text-[13px] leading-4 font-normal transition-colors duration-150 ${
+                      isActive
+                        ? 'bg-[#054159] text-white'
+                        : 'bg-transparent text-slate-600 hover:bg-[#054159] hover:text-white'
+                    }`}
+                  >
+                    <span className="truncate">
+                      {group.icon ? `${group.icon} ` : ''}
+                      {group.name}
+                    </span>
+                  </button>
+                );
+              })}
           </>
         )}
       </nav>
 
       {/* ── User footer with dropdown ── */}
       <div ref={dropdownRef} className="relative border-t border-slate-100">
-
         {/* Dropdown — pops above the footer */}
         {dropdownOpen && (
-          <div className="absolute bottom-full left-2 right-2 mb-1.5 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
-
+          <div className="absolute right-2 bottom-full left-2 z-50 mb-1.5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
             {/* User info header */}
-            <div className="px-3 py-2.5 border-b border-slate-100 flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 px-3 py-2.5">
               <Avatar name={profile?.full_name || 'User'} size="sm" />
               <div className="min-w-0">
-                <div className="text-sm font-medium text-slate-900 leading-4 truncate">
+                <div className="truncate text-sm leading-4 font-medium text-slate-900">
                   {profile?.full_name?.split(' ')[0] || 'User'}
                 </div>
-                <div className="text-xs text-slate-400 leading-[14px] mt-0.5 capitalize">
+                <div className="mt-0.5 text-xs leading-[14px] text-slate-400 capitalize">
                   {profile?.role || 'member'}
                 </div>
               </div>
@@ -178,25 +194,42 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
             {/* Actions */}
             <div className="py-1">
               <button
-                onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
-                className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-700 hover:bg-[#054159] hover:text-white cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate('/settings');
+                }}
+                className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-3 py-2 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-[#054159] hover:text-white"
               >
-                <Settings size={14} strokeWidth={1.5} className="text-slate-400 flex-shrink-0 group-hover:text-white" />
+                <Settings
+                  size={14}
+                  strokeWidth={1.5}
+                  className="flex-shrink-0 text-slate-400 group-hover:text-white"
+                />
                 Settings
               </button>
               <button
-                onClick={() => { setDropdownOpen(false); navigate('/change-password'); }}
-                className="group flex items-center gap-2.5 w-full px-3 py-2 text-sm text-slate-700 hover:bg-[#054159] hover:text-white cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate('/change-password');
+                }}
+                className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-3 py-2 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-[#054159] hover:text-white"
               >
-                <KeyRound size={14} strokeWidth={1.5} className="text-slate-400 flex-shrink-0 group-hover:text-white" />
+                <KeyRound
+                  size={14}
+                  strokeWidth={1.5}
+                  className="flex-shrink-0 text-slate-400 group-hover:text-white"
+                />
                 Change Password
               </button>
             </div>
 
             <div className="border-t border-slate-100 py-1">
               <button
-                onClick={() => { setDropdownOpen(false); signOut(); }}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50 cursor-pointer border-none bg-transparent text-left font-medium transition-colors duration-150"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  signOut();
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-3 py-2 text-left text-sm font-medium text-red-500 transition-colors duration-150 hover:bg-red-50"
               >
                 <LogOut size={14} strokeWidth={1.5} className="flex-shrink-0" />
                 Logout
@@ -207,21 +240,21 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
 
         {/* Trigger row */}
         <button
-          onClick={() => setDropdownOpen(prev => !prev)}
-          className="group w-full px-4 py-3 flex items-center gap-2.5 hover:bg-[#054159] cursor-pointer border-none bg-transparent text-left transition-colors duration-150"
+          onClick={() => setDropdownOpen((prev) => !prev)}
+          className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-4 py-3 text-left transition-colors duration-150 hover:bg-[#054159]"
         >
           <Avatar name={profile?.full_name || 'User'} size="sm" />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-normal text-slate-900 leading-4 truncate group-hover:text-white transition-colors duration-150">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm leading-4 font-normal text-slate-900 transition-colors duration-150 group-hover:text-white">
               {profile?.full_name || 'User'}
             </div>
-            <div className="text-xs text-slate-400 leading-[14px] mt-0.5 capitalize group-hover:text-white/60 transition-colors duration-150">
+            <div className="mt-0.5 text-xs leading-[14px] text-slate-400 capitalize transition-colors duration-150 group-hover:text-white/60">
               {profile?.role || 'member'}
             </div>
           </div>
           <ChevronDown
             size={13}
-            className={`text-slate-400 flex-shrink-0 transition-transform duration-200 group-hover:text-white/70 ${dropdownOpen ? 'rotate-180' : ''}`}
+            className={`flex-shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white/70 ${dropdownOpen ? 'rotate-180' : ''}`}
           />
         </button>
       </div>
