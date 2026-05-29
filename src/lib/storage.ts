@@ -1,8 +1,10 @@
 import { supabase } from './supabase';
 
 export const BUCKET = 'filevault';
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL || 'https://wctaspdndtdnogyjxopm.supabase.co';
+// Use the URL the supabase client was initialised with — guaranteed to be correct
+// regardless of whether VITE_SUPABASE_URL is set in the deployment environment.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SUPABASE_URL: string = (supabase as any).supabaseUrl as string;
 
 // ── Upload ─────────────────────────────────────────────────────────────────────
 
