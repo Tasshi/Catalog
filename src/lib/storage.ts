@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 
 export const BUCKET = 'filevault';
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL || 'https://wctaspdndtdnogyjxopm.supabase.co';
 
 // ── Upload ─────────────────────────────────────────────────────────────────────
 
@@ -32,16 +34,18 @@ async function uploadWithProgress(
   path: string,
   onProgress: (pct: number) => void,
 ): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
+  const url = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
     xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
-    xhr.setRequestHeader('x-upsert', 'true');   // ← was 'false', caused 409 on retry
+    xhr.setRequestHeader('x-upsert', 'true'); // ← was 'false', caused 409 on retry
     xhr.setRequestHeader('cache-control', '3600');
 
     xhr.upload.addEventListener('progress', (e) => {
@@ -94,29 +98,29 @@ export async function deleteStorageFile(path: string): Promise<void> {
 }
 
 // ── Download ───────────────────────────────────────────────────────────────────
-  export async function downloadFile(path: string, filename: string): Promise<void> {
-    const cleanPath = path.startsWith(`${BUCKET}/`) ? path.slice(BUCKET.length + 1) : path;  // ← add this
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const cleanPath = path.startsWith(`${BUCKET}/`) ? path.slice(BUCKET.length + 1) : path;
 
-    const { data, error } = await supabase.storage.from(BUCKET).download(cleanPath);  // ← use cleanPath
-    if (error) throw new Error(error.message);
+  const { data, error } = await supabase.storage.from(BUCKET).download(cleanPath);
+  if (error) throw new Error(error.message);
 
-    const url = URL.createObjectURL(data);
-    try {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+  const url = URL.createObjectURL(data);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  } finally {
+    URL.revokeObjectURL(url);
   }
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 export function formatBytes(bytes: number | null | undefined): string {
   if (!bytes || bytes <= 0) return '0 B';
-  const k     = 1024;
+  const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'] as const;
-  const i     = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
