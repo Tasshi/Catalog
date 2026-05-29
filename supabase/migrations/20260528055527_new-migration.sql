@@ -1,0 +1,12 @@
+create table audit_logs (user_id uuid, id uuid, file_id uuid, created_at timestamp with time zone, action text);
+create table files (id uuid, owner_id uuid, name text, tags text[], description text, storage_path text, ext text, size bigint, file_type text, mini_cohort_id uuid, folder_id uuid, updated_at timestamp with time zone, is_deleted boolean, created_at timestamp with time zone, version integer, size_bytes bigint, uploaded_by uuid, group_id uuid);
+create table folders (group_id uuid, auto_type text, icon text, name text, id uuid, parent_id uuid, is_auto boolean, created_by uuid, created_at timestamp with time zone, user_id uuid);
+create table group_members (user_id uuid, role text, created_at timestamp with time zone, id uuid, group_id uuid);
+create table group_mini_cohorts (created_at timestamp with time zone, cohort_id uuid, group_id uuid, id uuid);
+create table groups (owner_id uuid, description text, name text, created_at timestamp with time zone, id uuid, mini_cohort_id uuid, icon text);
+create table invitations (id uuid, full_name text, role text, email text, phone text, invited_by uuid, created_at timestamp with time zone, group_id uuid);
+create table mini_cohorts (project_id uuid, id uuid, group_id uuid, created_at timestamp with time zone, created_by uuid, name text, project_name text);
+create table profiles (full_name text, avatar_url text, email text, phone text, role text, cohort text, id uuid, created_at timestamp with time zone);
+create table projects (id uuid, name text, created_at timestamp with time zone);
+create table subgroups (created_at timestamp with time zone, id uuid, group_id uuid, name text);
+create table subprojects (is_auto boolean, auto_type text, mini_cohort_id uuid, parent_id uuid, created_by uuid, icon text, members jsonb, description text, tags text[], name text, created_at timestamp with time zone, group_id uuid, id uuid);

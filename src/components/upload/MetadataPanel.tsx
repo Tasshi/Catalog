@@ -407,7 +407,7 @@ function MemberForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 rounded border border-[#D4DEE9] bg-white py-1.5 text-xs font-medium text-[#64748D] hover:bg-[#F3F3F3]"
+          className="flex-1 rounded border border-red-200 bg-white py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
         >
           Cancel
         </button>

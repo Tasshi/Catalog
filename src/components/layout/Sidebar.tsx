@@ -91,8 +91,8 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
               onClick={() => navigate(path)}
               className={`group flex w-full cursor-pointer items-center gap-2 rounded-[6px] border-none px-3 py-2.5 text-left text-sm leading-4 font-normal transition-colors duration-150 ${
                 isActive
-                  ? 'bg-[#054159] text-white'
-                  : 'bg-transparent text-slate-700 hover:bg-[#054159] hover:text-white'
+                  ? 'bg-[#1E3A8A] text-white'
+                  : 'bg-transparent text-slate-700 hover:bg-[#1E3A8A] hover:text-white'
               }`}
             >
               <Icon
@@ -128,8 +128,8 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
               }}
               className={`group flex w-full cursor-pointer items-center gap-2 rounded-[6px] border-none px-3 py-2.5 text-left text-sm leading-4 font-normal transition-colors duration-150 ${
                 onGroupsPage && selectedGroupId === null
-                  ? 'bg-[#054159] text-white'
-                  : 'bg-transparent text-slate-700 hover:bg-[#054159] hover:text-white'
+                  ? 'bg-[#1E3A8A] text-white'
+                  : 'bg-transparent text-slate-700 hover:bg-[#1E3A8A] hover:text-white'
               }`}
             >
               <Users
@@ -158,8 +158,8 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
                     }}
                     className={`group flex w-full cursor-pointer items-center gap-2 rounded-[6px] border-none py-2 pr-3 pl-8 text-left text-[13px] leading-4 font-normal transition-colors duration-150 ${
                       isActive
-                        ? 'bg-[#054159] text-white'
-                        : 'bg-transparent text-slate-600 hover:bg-[#054159] hover:text-white'
+                        ? 'bg-[#1E3A8A] text-white'
+                        : 'bg-transparent text-slate-600 hover:bg-[#1E3A8A] hover:text-white'
                     }`}
                   >
                     <span className="truncate">
@@ -198,7 +198,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
                   setDropdownOpen(false);
                   navigate('/settings');
                 }}
-                className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-3 py-2 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-[#054159] hover:text-white"
+                className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-3 py-2 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-[#1E3A8A] hover:text-white"
               >
                 <Settings
                   size={14}
@@ -212,7 +212,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
                   setDropdownOpen(false);
                   navigate('/change-password');
                 }}
-                className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-3 py-2 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-[#054159] hover:text-white"
+                className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-3 py-2 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-[#1E3A8A] hover:text-white"
               >
                 <KeyRound
                   size={14}
@@ -241,7 +241,7 @@ export default function Sidebar({ selectedGroupId = null, onSelectGroup }: Sideb
         {/* Trigger row */}
         <button
           onClick={() => setDropdownOpen((prev) => !prev)}
-          className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-4 py-3 text-left transition-colors duration-150 hover:bg-[#054159]"
+          className="group flex w-full cursor-pointer items-center gap-2.5 border-none bg-transparent px-4 py-3 text-left transition-colors duration-150 hover:bg-[#1E3A8A]"
         >
           <Avatar name={profile?.full_name || 'User'} size="sm" />
           <div className="min-w-0 flex-1">

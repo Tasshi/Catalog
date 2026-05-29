@@ -40,9 +40,9 @@ export default function Header({ title, search, onSearch, actions }: HeaderProps
       <button
         onClick={() => navigate('/upload')}
         className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border-0 px-4 text-xs font-bold text-white transition-all hover:-translate-y-px"
-        style={{ background: '#054159', boxShadow: '0 4px 14px rgba(5,65,89,0.35)' }}
-        onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(5,65,89,0.5)')}
-        onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(5,65,89,0.35)')}
+        style={{ background: '#1E3A8A', boxShadow: '0 4px 14px rgba(30,58,138,0.35)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 6px 20px rgba(30,58,138,0.5)')}
+        onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(30,58,138,0.35)')}
       >
         <Upload size={14} strokeWidth={1.5} /> Create Project
       </button>

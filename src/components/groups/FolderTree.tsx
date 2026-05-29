@@ -1579,7 +1579,7 @@ function ExportModal({ node, files, onClose }: ExportModalProps) {
       )
       .join('\n');
     return header + '\n' + body;
-  }, [rows, activeFields, orderedFields]);
+  }, [rows, orderedFields]);
 
   function handleDownloadCSV() {
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -1996,8 +1996,8 @@ function ExportModal({ node, files, onClose }: ExportModalProps) {
               style={{
                 ...toolbarBtn,
                 background: '#fff',
-                color: '#64748b',
-                border: '1px solid #e2e8f0',
+                color: '#dc2626',
+                border: '1px solid #fca5a5',
               }}
             >
               Cancel
@@ -2428,7 +2428,7 @@ function CreateProjectModal({
             disabled={loading || !name.trim()}
             style={{
               ...toolbarBtn,
-              background: '#6366f1',
+              background: '#1E3A8A',
               color: '#fff',
               border: 'none',
               opacity: loading || !name.trim() ? 0.6 : 1,
@@ -2669,7 +2669,7 @@ function CreateSubFolderModal({ parentName, onClose, onCreate }: CreateSubFolder
             disabled={loading || !name.trim()}
             style={{
               ...toolbarBtn,
-              background: '#6366f1',
+              background: '#1E3A8A',
               color: '#fff',
               border: 'none',
               opacity: loading || !name.trim() ? 0.6 : 1,
@@ -2765,17 +2765,6 @@ function FolderView({
           </button>
           {canEdit && (
             <>
-              <button
-                onClick={() => setShowSubFolderModal(true)}
-                style={{
-                  ...toolbarBtn,
-                  background: '#fff',
-                  color: '#6366f1',
-                  border: '1px solid #6366f1',
-                }}
-              >
-                <IcoFolderPlus /> New Sub-folder
-              </button>
               <button
                 onClick={() => uploadRef.current?.click()}
                 style={{ ...toolbarBtn, background: '#6366f1', color: '#fff', border: 'none' }}
@@ -3265,7 +3254,7 @@ export default function FolderTree({
                   }}
                   onMouseEnter={(e) => {
                     if (safePage !== 1) {
-                      (e.currentTarget as HTMLButtonElement).style.background = '#054159';
+                      (e.currentTarget as HTMLButtonElement).style.background = '#1E3A8A';
                       (e.currentTarget as HTMLButtonElement).style.color = '#fff';
                     }
                   }}
@@ -3287,8 +3276,8 @@ export default function FolderTree({
                       alignItems: 'center',
                       justifyContent: 'center',
                       borderRadius: 8,
-                      border: `1px solid ${n === safePage ? '#054159' : '#e2e8f0'}`,
-                      background: n === safePage ? '#054159' : '#fff',
+                      border: `1px solid ${n === safePage ? '#1E3A8A' : '#e2e8f0'}`,
+                      background: n === safePage ? '#1E3A8A' : '#fff',
                       color: n === safePage ? '#fff' : '#475569',
                       cursor: 'pointer',
                       fontSize: 13,
@@ -3297,7 +3286,7 @@ export default function FolderTree({
                     }}
                     onMouseEnter={(e) => {
                       if (n !== safePage) {
-                        (e.currentTarget as HTMLButtonElement).style.background = '#054159';
+                        (e.currentTarget as HTMLButtonElement).style.background = '#1E3A8A';
                         (e.currentTarget as HTMLButtonElement).style.color = '#fff';
                       }
                     }}
@@ -3331,7 +3320,7 @@ export default function FolderTree({
                   }}
                   onMouseEnter={(e) => {
                     if (safePage !== totalPages) {
-                      (e.currentTarget as HTMLButtonElement).style.background = '#054159';
+                      (e.currentTarget as HTMLButtonElement).style.background = '#1E3A8A';
                       (e.currentTarget as HTMLButtonElement).style.color = '#fff';
                     }
                   }}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, type KeyboardEvent } from 'react';
 import { Modal, Button } from '../layout/ui';
 import { useApp } from '../../contexts/AppContext';
@@ -30,7 +29,12 @@ interface CreateGroupModalProps {
 }
 
 function getInitials(name = '') {
-  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
 }
 
 const AVATAR_COLORS = ['#e0e7ff', '#fce7f3', '#d1fae5', '#fef3c7', '#ede9fe', '#dbeafe'];
@@ -44,24 +48,24 @@ function avatarBg(name = '') {
 const db = supabase as any;
 
 export default function CreateGroupModal({ open, onClose }: CreateGroupModalProps) {
-  const { showToast }   = useApp();
-  const queryClient     = useQueryClient();
+  const { showToast } = useApp();
+  const queryClient = useQueryClient();
 
-  const [name,        setName]        = useState('');
+  const [name, setName] = useState('');
   const [nameTouched, setNameTouched] = useState(false);
-  const [description, setDesc]        = useState('');
-  const [icon,        setIcon]        = useState('📁');
+  const [description, setDesc] = useState('');
+  const [icon, setIcon] = useState('📁');
 
   const nameError = nameTouched && !name.trim() ? 'Project name is required.' : '';
 
   // Mini cohort
-  const [cohortInput,     setCohortInput]     = useState('');
+  const [cohortInput, setCohortInput] = useState('');
   const [cohortSearching, setCohortSearching] = useState(false);
   const [dropdownResults, setDropdownResults] = useState<MiniCohort[]>([]);
-  const [showDropdown,    setShowDropdown]    = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [selectedCohorts, setSelectedCohorts] = useState<MiniCohort[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const wrapperRef  = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [members, setMembers] = useState<PendingMember[]>([]);
   const [showCohortForm, setShowCohortForm] = useState(false);
@@ -80,7 +84,12 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
   // Debounced live search as user types
   useEffect(() => {
     const q = cohortInput.trim();
-    if (!q) { setDropdownResults([]); setShowDropdown(false); return; }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!q) {
+      setDropdownResults([]);
+      setShowDropdown(false);
+      return;
+    }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -93,22 +102,27 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
         .limit(8);
 
       setCohortSearching(false);
-      if (error) { console.error('[cohort search]', error); return; }
+      if (error) {
+        console.error('[cohort search]', error);
+        return;
+      }
 
       const filtered = (data ?? []).filter(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (r: any) => !selectedCohorts.some(c => c.id === r.id)
+        (r: any) => !selectedCohorts.some((c) => c.id === r.id),
       );
       setDropdownResults(filtered);
       setShowDropdown(true); // always show — even if empty, we show "Create" option
     }, 250);
 
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cohortInput]);
 
   function selectCohort(mc: MiniCohort) {
-    setSelectedCohorts(prev => [...prev, mc]);
+    setSelectedCohorts((prev) => [...prev, mc]);
     setCohortInput('');
     setDropdownResults([]);
     setShowDropdown(false);
@@ -121,7 +135,7 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
     if (!trimmed) return;
 
     // Prevent duplicates
-    if (selectedCohorts.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
+    if (selectedCohorts.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) {
       setShowDropdown(false);
       setCohortInput('');
       return;
@@ -142,13 +156,13 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
     }
 
     const mc: MiniCohort = {
-      id:          data.id,
-      name:        data.name,
-      
-      group_id:    data.group_id,
+      id: data.id,
+      name: data.name,
+
+      group_id: data.group_id,
     };
 
-    setSelectedCohorts(prev => [...prev, mc]);
+    setSelectedCohorts((prev) => [...prev, mc]);
     setCohortInput('');
     setDropdownResults([]);
     setShowDropdown(false);
@@ -156,7 +170,7 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
   }
 
   function removeCohort(id: string) {
-    setSelectedCohorts(prev => prev.filter(c => c.id !== id));
+    setSelectedCohorts((prev) => prev.filter((c) => c.id !== id));
   }
 
   async function handleCohortKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -166,7 +180,7 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
       const q = cohortInput.trim();
       if (!q) return;
       // If exact match exists in dropdown, select it; otherwise create new
-      const exact = dropdownResults.find(r => r.name.toLowerCase() === q.toLowerCase());
+      const exact = dropdownResults.find((r) => r.name.toLowerCase() === q.toLowerCase());
       if (exact) {
         selectCohort(exact);
       } else if (dropdownResults.length > 0) {
@@ -175,15 +189,17 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
         await createAndAddCohort(q);
       }
     }
-    if (e.key === 'Escape') { setShowDropdown(false); }
+    if (e.key === 'Escape') {
+      setShowDropdown(false);
+    }
     if (e.key === 'Backspace' && cohortInput === '' && selectedCohorts.length > 0) {
       e.stopPropagation();
-      setSelectedCohorts(prev => prev.slice(0, -1));
+      setSelectedCohorts((prev) => prev.slice(0, -1));
     }
   }
 
   function handleRemoveMember(id: number) {
-    setMembers(prev => prev.filter(m => m.id !== id));
+    setMembers((prev) => prev.filter((m) => m.id !== id));
   }
 
   async function handleCreate() {
@@ -194,7 +210,7 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
     let finalCohorts = [...selectedCohorts];
     const typedName = cohortInput.trim();
 
-    if (typedName && !finalCohorts.some(c => c.name.toLowerCase() === typedName.toLowerCase())) {
+    if (typedName && !finalCohorts.some((c) => c.name.toLowerCase() === typedName.toLowerCase())) {
       // Check if it already exists — use maybeSingle to avoid 406
       const { data: existing } = await db
         .from('mini_cohorts')
@@ -220,14 +236,17 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
       }
     }
 
-    console.log('[handleCreate] finalCohorts:', finalCohorts.map(c => c.name));
+    console.log(
+      '[handleCreate] finalCohorts:',
+      finalCohorts.map((c) => c.name),
+    );
 
     try {
       // Step 1 — create the group via RPC
       const { data, error } = await db.rpc('create_group_with_cohort', {
-        p_name:        name.trim(),
+        p_name: name.trim(),
         p_description: description.trim() || null,
-        p_icon:        icon,
+        p_icon: icon,
         p_cohort_name: null, // cohorts handled separately below
       });
 
@@ -246,31 +265,40 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
 
       // Step 2 — insert all cohorts into junction table + update their group_id
       if (groupId && finalCohorts.length > 0) {
-        await Promise.all(finalCohorts.map(async c => {
-          // Link in junction table
-          await db.from('group_mini_cohorts').insert({ group_id: groupId, cohort_id: c.id });
-          // Update cohort's group_id
-          await db.from('mini_cohorts').update({ group_id: groupId }).eq('id', c.id);
-        }));
+        await Promise.all(
+          finalCohorts.map(async (c) => {
+            // Link in junction table
+            await db.from('group_mini_cohorts').insert({ group_id: groupId, cohort_id: c.id });
+            // Update cohort's group_id
+            await db.from('mini_cohorts').update({ group_id: groupId }).eq('id', c.id);
+          }),
+        );
 
         // Set first cohort as primary on the group (for backwards compat)
-        await db.from('groups')
-          .update({ mini_cohort_id: finalCohorts[0].id })
-          .eq('id', groupId);
+        await db.from('groups').update({ mini_cohort_id: finalCohorts[0].id }).eq('id', groupId);
 
-        console.log('[handleCreate] ✅ linked', finalCohorts.length, 'cohort(s)', finalCohorts.map(c => c.name));
+        console.log(
+          '[handleCreate] ✅ linked',
+          finalCohorts.length,
+          'cohort(s)',
+          finalCohorts.map((c) => c.name),
+        );
       }
 
       // Step 3 — add pending members
       if (groupId && members.length > 0) {
         await Promise.all(
-          members.map(async m => {
-            const { data: profile, error: profileError } = await db
-              .from('profiles').select('id').eq('email', m.value).maybeSingle() as
-              { data: { id: string } | null; error: unknown };
+          members.map(async (m) => {
+            const { data: profile, error: profileError } = (await db
+              .from('profiles')
+              .select('id')
+              .eq('email', m.value)
+              .maybeSingle()) as { data: { id: string } | null; error: unknown };
             if (profileError || !profile?.id) return;
-            await db.from('group_members').insert({ group_id: groupId, user_id: profile.id, role: m.role });
-          })
+            await db
+              .from('group_members')
+              .insert({ group_id: groupId, user_id: profile.id, role: m.role });
+          }),
         );
       }
 
@@ -303,65 +331,101 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
       title="Create new Cohort"
       size="lg"
       footer={
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={handleClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleCreate}>Create group</Button>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            onClick={handleClose}
+            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleCreate}>
+            Create group
+          </Button>
         </div>
       }
     >
-      <div className="flex flex-col gap-4 overflow-y-auto pr-1" style={{ maxHeight: 'calc(80vh - 140px)' }}>
-
+      <div
+        className="flex flex-col gap-4 overflow-y-auto pr-1"
+        style={{ maxHeight: 'calc(80vh - 140px)' }}
+      >
         {/* Group name */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text3)' }}>
+          <label
+            className="mb-1.5 block text-xs font-semibold tracking-wider uppercase"
+            style={{ color: 'var(--text3)' }}
+          >
             Cohort name <span style={{ color: '#f87171' }}>*</span>
           </label>
           <input
             className="form-input w-full"
             placeholder="e.g. Marketing Team Q3"
             value={name}
-            onChange={e => { setName(e.target.value); if (!nameTouched) setNameTouched(true); }}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (!nameTouched) setNameTouched(true);
+            }}
             onBlur={() => setNameTouched(true)}
             style={nameError ? { borderColor: '#f87171', outline: 'none' } : {}}
             aria-invalid={!!nameError}
             aria-describedby={nameError ? 'name-error' : undefined}
           />
           {nameError && (
-            <p id="name-error" className="text-[11px] font-medium mt-1" style={{ color: '#f87171' }}>{nameError}</p>
+            <p
+              id="name-error"
+              className="mt-1 text-[11px] font-medium"
+              style={{ color: '#f87171' }}
+            >
+              {nameError}
+            </p>
           )}
         </div>
 
         {/* Description */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text3)' }}>
+          <label
+            className="mb-1.5 block text-xs font-semibold tracking-wider uppercase"
+            style={{ color: 'var(--text3)' }}
+          >
             Description
           </label>
           <input
             className="form-input w-full"
             placeholder="Short description of this group's purpose"
             value={description}
-            onChange={e => setDesc(e.target.value)}
+            onChange={(e) => setDesc(e.target.value)}
           />
         </div>
 
         {/* Icon picker */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: 'var(--text3)' }}>
+          <label
+            className="mb-2 block text-xs font-semibold tracking-wider uppercase"
+            style={{ color: 'var(--text3)' }}
+          >
             Icon
           </label>
-          <div className="flex gap-2 flex-wrap">
-            {ICONS.map(i => (
+          <div className="flex flex-wrap gap-2">
+            {ICONS.map((i) => (
               <button
                 key={i}
                 onClick={() => setIcon(i)}
                 style={{
-                  width: 38, height: 38, fontSize: 19, borderRadius: 8,
+                  width: 38,
+                  height: 38,
+                  fontSize: 19,
+                  borderRadius: 8,
                   border: icon === i ? '2px solid var(--accent)' : '1px solid var(--border)',
                   background: icon === i ? 'rgba(90,79,207,0.08)' : 'var(--glass2)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
                 aria-label={`Select icon ${i}`}
-              >{i}</button>
+              >
+                {i}
+              </button>
             ))}
           </div>
         </div>
@@ -371,21 +435,46 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
         {/* Pending members */}
         {members.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            {members.map(m => {
+            {members.map((m) => {
               const rs = ROLE_STYLES[m.role] || ROLE_STYLES.viewer;
               return (
-                <div key={m.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
-                  style={{ border: '1px solid var(--border)', background: 'var(--glass2)' }}>
-                  <div style={{
-                    width: 26, height: 26, borderRadius: '50%', background: avatarBg(m.label),
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 600, color: '#374151', flexShrink: 0,
-                  }}>{getInitials(m.label)}</div>
-                  <span className="flex-1 text-sm truncate" style={{ color: 'var(--text)' }}>{m.label}</span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-xl capitalize"
-                    style={{ background: rs.bg, color: rs.color, border: `1px solid ${rs.border}` }}>{m.role}</span>
-                  <button className="icon-btn" onClick={() => handleRemoveMember(m.id)}
-                    style={{ color: '#fc8181', flexShrink: 0 }} aria-label="Remove member">
+                <div
+                  key={m.id}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5"
+                  style={{ border: '1px solid var(--border)', background: 'var(--glass2)' }}
+                >
+                  <div
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: '50%',
+                      background: avatarBg(m.label),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: '#374151',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {getInitials(m.label)}
+                  </div>
+                  <span className="flex-1 truncate text-sm" style={{ color: 'var(--text)' }}>
+                    {m.label}
+                  </span>
+                  <span
+                    className="rounded-xl px-2 py-0.5 text-xs font-semibold capitalize"
+                    style={{ background: rs.bg, color: rs.color, border: `1px solid ${rs.border}` }}
+                  >
+                    {m.role}
+                  </span>
+                  <button
+                    className="icon-btn"
+                    onClick={() => handleRemoveMember(m.id)}
+                    style={{ color: '#fc8181', flexShrink: 0 }}
+                    aria-label="Remove member"
+                  >
                     <X size={12} />
                   </button>
                 </div>
@@ -397,28 +486,47 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
         {/* Add mini cohort */}
         <div>
           {/* Header row */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Search size={14} style={{ color: 'var(--text3)' }} />
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>
+              <span
+                className="text-xs font-semibold tracking-wider uppercase"
+                style={{ color: 'var(--text3)' }}
+              >
                 Mini cohorts
               </span>
-              <span style={{
-                fontSize: 11, fontWeight: 500, padding: '1px 8px', borderRadius: 20,
-                background: 'rgba(90,79,207,0.08)', color: 'var(--accent)',
-                border: '1px solid rgba(90,79,207,0.2)',
-              }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  padding: '1px 8px',
+                  borderRadius: 20,
+                  background: 'rgba(90,79,207,0.08)',
+                  color: 'var(--accent)',
+                  border: '1px solid rgba(90,79,207,0.2)',
+                }}
+              >
                 {selectedCohorts.length}
               </span>
             </div>
             {!showCohortForm && (
               <button
-                onClick={() => { setShowCohortForm(true); setTimeout(() => document.getElementById('cohort-inline-input')?.focus(), 50); }}
+                onClick={() => {
+                  setShowCohortForm(true);
+                  setTimeout(() => document.getElementById('cohort-inline-input')?.focus(), 50);
+                }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  padding: '5px 10px', fontSize: 12, fontWeight: 500,
-                  borderRadius: 8, border: '1px solid var(--border)',
-                  background: 'var(--glass2)', color: 'var(--text)', cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '5px 10px',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--glass2)',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
                 }}
               >
                 <Search size={13} />
@@ -429,18 +537,29 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
 
           {/* Added cohorts list */}
           {selectedCohorts.length > 0 && (
-            <div className="flex flex-col gap-1.5 mb-2">
-              {selectedCohorts.map(c => (
-                <div key={c.id} className="flex items-center justify-between px-3 py-2 rounded-lg"
-                  style={{ border: '1px solid var(--border)', background: 'var(--glass2)' }}>
+            <div className="mb-2 flex flex-col gap-1.5">
+              {selectedCohorts.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between rounded-lg px-3 py-2"
+                  style={{ border: '1px solid var(--border)', background: 'var(--glass2)' }}
+                >
                   <div className="flex items-center gap-2">
                     <Search size={13} style={{ color: 'var(--text3)' }} />
                     <span style={{ fontSize: 13, color: 'var(--text)' }}>{c.name}</span>
-
                   </div>
-                  <button onClick={() => removeCohort(c.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--text3)' }}
-                    aria-label={`Remove ${c.name}`}>
+                  <button
+                    onClick={() => removeCohort(c.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: 'var(--text3)',
+                    }}
+                    aria-label={`Remove ${c.name}`}
+                  >
                     <X size={14} />
                   </button>
                 </div>
@@ -450,92 +569,177 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
 
           {/* Inline form — shown when Add button clicked */}
           {showCohortForm && (
-            <div ref={wrapperRef} style={{
-              border: '1px solid rgba(90,79,207,0.25)', borderRadius: 8,
-              background: 'rgba(90,79,207,0.03)', padding: '12px',
-              position: 'relative',
-            }}>
-              <p className="text-xs font-semibold mb-2" style={{ color: 'var(--accent)' }}>New mini cohort</p>
+            <div
+              ref={wrapperRef}
+              style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: 8,
+                background: '#ffffff',
+                padding: '12px',
+                position: 'relative',
+              }}
+            >
+              <p className="mb-2 text-xs font-semibold" style={{ color: '#111827' }}>
+                New mini cohort
+              </p>
 
               {/* Input */}
-              <div className="flex items-center gap-2 mb-3" style={{
-                border: '1px solid var(--border)', borderRadius: 8,
-                padding: '8px 10px', background: 'var(--glass2)',
-              }}>
-                <Search size={14} style={{ color: 'var(--text3)', flexShrink: 0 }} />
+              <div
+                className="mb-3 flex items-center gap-2"
+                style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  padding: '8px 10px',
+                  background: '#ffffff',
+                }}
+              >
+                <Search size={14} style={{ color: '#9ca3af', flexShrink: 0 }} />
                 <input
                   id="cohort-inline-input"
                   value={cohortInput}
-                  onChange={e => setCohortInput(e.target.value)}
+                  onChange={(e) => setCohortInput(e.target.value)}
                   onKeyDown={handleCohortKeyDown}
-                  onFocus={() => { if (dropdownResults.length > 0) setShowDropdown(true); }}
+                  onFocus={() => {
+                    if (dropdownResults.length > 0) setShowDropdown(true);
+                  }}
                   placeholder="Cohort name"
                   style={{
-                    border: 'none', outline: 'none', background: 'transparent',
-                    fontSize: 13, color: 'var(--text)', flex: 1, minWidth: 0,
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: 13,
+                    color: '#111827',
+                    flex: 1,
+                    minWidth: 0,
                   }}
                 />
                 {cohortSearching && (
-                  <Loader size={13} style={{ color: 'var(--text3)', animation: 'spin 1s linear infinite' }} />
+                  <Loader
+                    size={13}
+                    style={{ color: 'var(--text3)', animation: 'spin 1s linear infinite' }}
+                  />
                 )}
               </div>
 
               {/* Dropdown suggestions */}
               {showDropdown && cohortInput.trim() && (
-                <div style={{
-                  border: '1px solid var(--border)', borderRadius: 8,
-                  overflow: 'hidden', marginBottom: 10, background: 'var(--bg)',
-                }}>
+                <div
+                  style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    marginBottom: 10,
+                    background: 'var(--bg)',
+                  }}
+                >
                   {dropdownResults.map((c, i) => (
-                    <button key={c.id}
-                      onMouseDown={e => { e.preventDefault(); selectCohort(c); }}
-                      style={{
-                        width: '100%', textAlign: 'left', padding: '7px 12px',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        borderBottom: i < dropdownResults.length - 1 ? '1px solid var(--border)' : 'none',
-                        display: 'flex', flexDirection: 'column', gap: 1,
+                    <button
+                      key={c.id}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        selectCohort(c);
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--glass2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '7px 12px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        borderBottom:
+                          i < dropdownResults.length - 1 ? '1px solid var(--border)' : 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--glass2)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                     >
-                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{c.name}</span>
-
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+                        {c.name}
+                      </span>
                     </button>
                   ))}
-                  {!dropdownResults.some(r => r.name.toLowerCase() === cohortInput.trim().toLowerCase()) && cohortInput.trim() && (
-                    <button
-                      onMouseDown={e => { e.preventDefault(); createAndAddCohort(cohortInput); }}
-                      style={{
-                        width: '100%', textAlign: 'left', padding: '7px 12px',
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 6,
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--glass2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                    >
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(90,79,207,0.10)', color: 'var(--accent)' }}>+ Create</span>
-                      <span style={{ fontSize: 13, color: 'var(--text)' }}>"{cohortInput.trim()}"</span>
-                    </button>
-                  )}
+                  {!dropdownResults.some(
+                    (r) => r.name.toLowerCase() === cohortInput.trim().toLowerCase(),
+                  ) &&
+                    cohortInput.trim() && (
+                      <button
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          createAndAddCohort(cohortInput);
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '7px 12px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--glass2)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                      >
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            background: 'rgba(90,79,207,0.10)',
+                            color: 'var(--accent)',
+                          }}
+                        >
+                          + Create
+                        </span>
+                        <span style={{ fontSize: 13, color: 'var(--text)' }}>
+                          "{cohortInput.trim()}"
+                        </span>
+                      </button>
+                    )}
                 </div>
               )}
 
               {/* Cancel / Add cohort buttons */}
-              <div className="flex gap-2 justify-end">
+              <div className="flex justify-end gap-2">
                 <button
-                  onClick={() => { setCohortInput(''); setShowDropdown(false); setDropdownResults([]); setShowCohortForm(false); }}
-                  style={{
-                    padding: '6px 14px', fontSize: 13, fontWeight: 500, borderRadius: 8,
-                    border: '1px solid var(--border)', background: 'none',
-                    color: 'var(--text)', cursor: 'pointer',
+                  onClick={() => {
+                    setCohortInput('');
+                    setShowDropdown(false);
+                    setDropdownResults([]);
+                    setShowCohortForm(false);
                   }}
-                >Cancel</button>
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    borderRadius: 8,
+                    border: '1px solid #fca5a5',
+                    background: 'none',
+                    color: '#dc2626',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={async () => {
                     const q = cohortInput.trim();
-                    console.log('[Add cohort btn] q:', q, 'dropdownResults:', dropdownResults, 'selectedCohorts before:', selectedCohorts);
+                    console.log(
+                      '[Add cohort btn] q:',
+                      q,
+                      'dropdownResults:',
+                      dropdownResults,
+                      'selectedCohorts before:',
+                      selectedCohorts,
+                    );
                     if (!q) return;
-                    const exact = dropdownResults.find(r => r.name.toLowerCase() === q.toLowerCase());
+                    const exact = dropdownResults.find(
+                      (r) => r.name.toLowerCase() === q.toLowerCase(),
+                    );
                     if (exact) {
                       console.log('[Add cohort btn] selecting exact match:', exact);
                       selectCohort(exact);
@@ -554,15 +758,22 @@ export default function CreateGroupModal({ open, onClose }: CreateGroupModalProp
                     document.getElementById('cohort-inline-input')?.focus();
                   }}
                   style={{
-                    padding: '6px 14px', fontSize: 13, fontWeight: 500, borderRadius: 8,
-                    border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer',
+                    padding: '6px 14px',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#1E3A8A',
+                    color: '#fff',
+                    cursor: 'pointer',
                   }}
-                >Add cohort</button>
+                >
+                  Add cohort
+                </button>
               </div>
             </div>
           )}
         </div>
-
       </div>
     </Modal>
   );

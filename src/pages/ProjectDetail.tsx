@@ -542,7 +542,7 @@ function CreateSubFolderModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-9 cursor-pointer rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
+            className="h-9 cursor-pointer rounded-xl border border-red-200 bg-white px-4 text-[13px] font-medium text-red-600 hover:bg-red-50"
           >
             Cancel
           </button>
@@ -1386,25 +1386,10 @@ export default function ProjectDetail() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              {canEdit && activeFolder && (
-                <button
-                  onClick={() => setShowSubFolderModal(true)}
-                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-0 px-4 text-xs font-bold text-white transition-all hover:-translate-y-px"
-                  style={{ background: '#054159', boxShadow: '0 4px 14px rgba(5,65,89,0.35)' }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.boxShadow = '0 6px 20px rgba(5,65,89,0.5)')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.boxShadow = '0 4px 14px rgba(5,65,89,0.35)')
-                  }
-                >
-                  <FolderPlus size={13} /> New Sub-folder
-                </button>
-              )}
               <button
                 onClick={() => navigate('/upload')}
                 className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-0 px-4 text-xs font-bold text-white transition-all hover:-translate-y-px"
-                style={{ background: '#054159', boxShadow: '0 4px 14px rgba(5,65,89,0.35)' }}
+                style={{ background: '#1E3A8A', boxShadow: '0 4px 14px rgba(30,58,138,0.35)' }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.boxShadow = '0 6px 20px rgba(255,120,0,0.5)')
                 }
@@ -1549,8 +1534,8 @@ export default function ProjectDetail() {
                             disabled={inlineUploading}
                             className="flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border-0 px-3 text-[11px] font-medium text-white transition-all hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
                             style={{
-                              background: '#054159',
-                              boxShadow: '0 2px 8px rgba(5,65,89,0.3)',
+                              background: '#1E3A8A',
+                              boxShadow: '0 2px 8px rgba(30,58,138,0.3)',
                             }}
                           >
                             {inlineUploading ? (
@@ -1619,7 +1604,8 @@ export default function ProjectDetail() {
                           onClick={() =>
                             navigate('/upload', { state: { folderId: activeFolder.id, groupId } })
                           }
-                          className="mt-1 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-violet-600 px-4 text-xs font-medium text-white hover:bg-violet-700"
+                          className="mt-1 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border-0 px-4 text-xs font-medium text-white"
+                          style={{ background: '#1E3A8A' }}
                         >
                           <UploadCloud size={13} /> Upload file
                         </button>
@@ -1716,7 +1702,7 @@ export default function ProjectDetail() {
                         width: 180,
                         transition: 'border 0.15s',
                       }}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = '#054159')}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = '#1E3A8A')}
                       onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
                     />
                     {searchQuery && (
@@ -1775,8 +1761,8 @@ export default function ProjectDetail() {
                           style={
                             filterCohortName === null
                               ? {
-                                  background: '#054159',
-                                  boxShadow: '0 4px 12px rgba(5,65,89,0.35)',
+                                  background: '#1E3A8A',
+                                  boxShadow: '0 4px 12px rgba(30,58,138,0.35)',
                                 }
                               : {}
                           }
@@ -1811,8 +1797,8 @@ export default function ProjectDetail() {
                                 style={
                                   isActive
                                     ? {
-                                        background: '#054159',
-                                        boxShadow: '0 4px 12px rgba(5,65,89,0.35)',
+                                        background: '#1E3A8A',
+                                        boxShadow: '0 4px 12px rgba(30,58,138,0.35)',
                                       }
                                     : {}
                                 }
