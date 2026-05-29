@@ -813,7 +813,7 @@ export default function Auth() {
                       <button
                         type="button"
                         onClick={openForgot}
-                        className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-amber-400 transition-colors hover:text-amber-300 hover:underline"
+                        className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-white transition-colors hover:text-white/80 hover:underline"
                       >
                         Forgot password?
                       </button>

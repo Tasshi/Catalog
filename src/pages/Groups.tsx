@@ -108,9 +108,9 @@ export default function Groups() {
           <button
             onClick={() => navigate('/settings')}
             className="h-7 shrink-0 cursor-pointer rounded-lg border-0 px-3 text-[12px] font-semibold whitespace-nowrap text-white transition-colors"
-            style={{ background: '#EB5800' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#CC4D00')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#EB5800')}
+            style={{ background: '#1E3A8A' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#1e40af')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#1E3A8A')}
           >
             Go to Settings
           </button>

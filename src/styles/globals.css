@@ -13,7 +13,7 @@
   --card-foreground: oklch(0.147 0.004 49.3);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.147 0.004 49.3);
-  --primary: #054159;
+  --primary: #1e3a8a;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.96 0.002 17.2);
   --secondary-foreground: oklch(0.214 0.009 43.1);
@@ -48,7 +48,7 @@
   --card-foreground: oklch(0.986 0.002 67.8);
   --popover: oklch(0.214 0.009 43.1);
   --popover-foreground: oklch(0.986 0.002 67.8);
-  --primary: #054159;
+  --primary: #1e3a8a;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.268 0.011 36.5);
   --secondary-foreground: oklch(0.986 0.002 67.8);
@@ -128,4 +128,12 @@
   html {
     @apply font-sans;
   }
+}
+
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked {
+  background: linear-gradient(#1e3a8a, #1e3a8a);
+  color: #ffffff;
 }

@@ -73,7 +73,7 @@ const s = {
     'text-[13px] text-slate-600 hover:bg-slate-50 hover:text-slate-900',
     'transition-colors duration-100 border-0 bg-transparent w-full text-left',
   ].join(' '),
-  folderItemActive: 'bg-indigo-50 !text-indigo-700 font-medium',
+  folderItemActive: 'bg-[#1E3A8A] !text-white font-medium',
   folderName: 'truncate flex-1',
   folderCount: 'text-[10px] text-slate-400 tabular-nums shrink-0',
   childList: 'ml-4 flex flex-col gap-0.5 border-l border-slate-100 pl-2 mt-0.5',
@@ -440,7 +440,7 @@ function SidebarTree({
               className={[s.folderItem, isActive ? s.folderItemActive : ''].join(' ')}
             >
               {isActive ? (
-                <FolderOpen size={13} className="shrink-0 text-indigo-500" />
+                <FolderOpen size={13} className="shrink-0 text-white" />
               ) : (
                 <Folder size={13} className="shrink-0 text-amber-400" />
               )}
@@ -545,8 +545,8 @@ export default function SubfoldersView() {
   }, [roots, loadingFolders, resolvedFolderId, autoNavigated]);
 
   // Reset selection when folder changes
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIds(new Set());
   }, [folderStack.length]);
 
@@ -1204,9 +1204,9 @@ export default function SubfoldersView() {
                   navigate('/settings');
                 }}
                 className="h-10 flex-1 cursor-pointer rounded-xl border-0 text-sm font-medium text-white"
-                style={{ background: '#EB5800' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#CC4D00')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#EB5800')}
+                style={{ background: '#1E3A8A' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#1e40af')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#1E3A8A')}
               >
                 Go to Settings
               </button>
